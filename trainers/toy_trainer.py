@@ -1,29 +1,9 @@
+from trainers.abc_trainer import abcTrainer
 
-class Trainer:
+
+class ToyTrainer(abcTrainer):
     def __init__(self, dataloader, net, loss, optimizer, device, validation_frequency=1, max_epoch=100):
-        self.dataloader = dataloader
-        self.net = net
-        self.loss = loss
-        self.optimizer = optimizer
-        self.epoch = 0
-        self.validation_frequency = validation_frequency
-        self.max_epoch = max_epoch
-        self.device = device
-        self.save_dir = "best_model_weight"
-
-    def train(self):
-        for epoch in range(0, self.max_epoch):
-            self.epoch = epoch
-
-            # training
-            self.train_epoch()
-
-            # validation
-            if epoch % self.validation_frequency == 0:
-                self.validate()
-
-        print(f'Train finished')
-
+        super().__init__(dataloader, net, loss, optimizer, device, validation_frequency=validation_frequency, max_epoch=max_epoch)
 
     def train_epoch(self):
         running_loss = 0.0

@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
-
+# basic cnn found: https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 class ToyNet(nn.Module):
     def __init__(self, class_nb=10):
         super(ToyNet, self).__init__()

@@ -1,35 +1,28 @@
 import torch
 import torch.optim as optim
-import torch.nn as nn
-import torchvision
-from torchvision import models
-from torchvision.transforms import transforms
+import os
 
+from datasets.cifar10 import Cifar10Dataset
+from loss import margin_loss
 from models.toy_net import ToyNet
-from trainer import Trainer
+from trainers.cifar_trainer import Cifar10Trainer
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('Using gpu: %s ' % torch.cuda.is_available())
 
 if __name__ == '__main__':
+    dataset = Cifar10Dataset(
+        data_dir=os.path.join("data", "cifar-10", "train"),
+        id_class_list=["airplane", "automobile", "bird", "cat"],
+        ood_class_list=["truck", "ship"],
+    )
 
-    transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    loader = torch.utils.data.DataLoader(
+        dataset, batch_size=32, shuffle=True, num_workers=2
+    )
+    net = ToyNet(class_nb=4).to(device)
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
-    trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                            download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128,
-                                              shuffle=True, num_workers=2)
-
-    # resnet50 = models.resnet50(pretrained=True)
-
-    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-    net = ToyNet().to(device)
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = optim.SGD(net.parameters(), lr=0.032, momentum=0.9)
-
-    trainer = Trainer(dataloader=trainloader, net=net, loss=criterion, optimizer=optimizer, device=device)
+    trainer = Cifar10Trainer(dataloader=loader, net=net, loss=margin_loss, optimizer=optimizer, device=device)
     trainer.train()
 

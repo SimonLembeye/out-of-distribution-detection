@@ -2,6 +2,7 @@ import torch
 import os
 
 from datasets.cifar10 import Cifar10Dataset
+from loss import margin_loss
 from models.toy_net import ToyNet
 import torch.nn as nn
 import torch.optim as optim
@@ -12,8 +13,6 @@ if __name__ == "__main__":
         id_class_list=["airplane", "automobile", "bird", "cat"],
         ood_class_list=["truck", "ship"],
     )
-
-    print("Yes")
 
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=32, shuffle=True, num_workers=2
@@ -35,17 +34,23 @@ if __name__ == "__main__":
                 data["ood_labels"],
             )
 
+            id_outputs = []
+            ood_outputs = []
+
             for j in range(len(id_labels)):
-                optimizer.zero_grad()
                 outputs = net(id_images[:, j, :, :, :])
-                # print(id_labels[j])
-                # print(outputs)
+                id_outputs.append(outputs)
 
-                loss = loss_fn(outputs, id_labels[j])
-                loss.backward()
-                optimizer.step()
+            for j in range(ood_images.size()[1]):
+                outputs = net(ood_images[:, j, :, :, :])
+                ood_outputs.append(outputs)
 
-                e_loss += loss.item()
+            optimizer.zero_grad()
+            loss = margin_loss((id_outputs, ood_outputs), id_labels)
+            loss.backward()
+            optimizer.step()
+
+            e_loss += loss.item()
 
         print(e_loss)
 
