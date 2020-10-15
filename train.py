@@ -18,7 +18,7 @@ if __name__ == '__main__':
     )
 
     loader = torch.utils.data.DataLoader(
-        dataset, batch_size=32, shuffle=True, num_workers=2
+        dataset, batch_size=32, shuffle=True, num_workers=4
     )
     net = ToyNet(class_nb=4).to(device)
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)

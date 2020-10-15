@@ -6,10 +6,11 @@ from torch.utils.data import Dataset
 
 
 class Cifar10Dataset(Dataset):
-    def __init__(self, data_dir, id_class_list, ood_class_list, transform=None):
+    def __init__(self, data_dir, id_class_list, ood_class_list, class_to_id = {}, transform=None):
         self.data_dir = data_dir
         self.id_class_list = id_class_list
         self.ood_class_list = ood_class_list
+        self.class_to_id = {}
         if transform:
             self.transform = transform
         else:
@@ -29,9 +30,9 @@ class Cifar10Dataset(Dataset):
 
         idx += 1  # image names go from 1 to 5000
 
-        class_to_id = {}
-        for i in range(len(self.id_class_list)):
-            class_to_id[self.id_class_list[i]] = i
+        if not len(self.class_to_id):
+            for i in range(len(self.id_class_list)):
+                self.class_to_id[self.id_class_list[i]] = i
 
         id_images = []
         id_labels = []
@@ -40,7 +41,7 @@ class Cifar10Dataset(Dataset):
             image_path = os.path.join(
                 self.data_dir, class_name, f"{str(idx).zfill(4)}.png"
             )
-            id_labels.append(class_to_id[class_name])
+            id_labels.append(self.class_to_id[class_name])
             image = cv2.imread(image_path)
             image = self.transform(image) if self.transform else image
             id_images.append(image)
