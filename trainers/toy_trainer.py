@@ -31,4 +31,4 @@ class ToyTrainer(abcTrainer):
                 running_loss = 0.0
 
     def validate(self):
-        print("Ok val")
+        print()

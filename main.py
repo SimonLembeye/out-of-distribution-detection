@@ -2,11 +2,10 @@ import torch
 import os
 
 from datasets.cifar10 import Cifar10Dataset
+from datasets.tiny_imagenet import TinyImagenetDataset
 from loss import margin_loss
 from models.toy_net import ToyNet
-import torch.nn as nn
 import torch.optim as optim
-
 from trainers.cifar_trainer import Cifar10Trainer
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -44,18 +43,35 @@ class Classifier:
         )
 
         loader = torch.utils.data.DataLoader(
-            dataset, batch_size=32, shuffle=True, num_workers=2
+            dataset, batch_size=256, shuffle=True, num_workers=3
         )
 
         self.net = ToyNet(class_nb=8).to(device)
-        optimizer = optim.SGD(self.net.parameters(), lr=0.001, momentum=0.9)
+        optimizer = optim.SGD(self.net.parameters(), lr=0.0005, momentum=0.9)
         self.trainer = Cifar10Trainer(
             dataloader=loader,
             net=self.net,
             loss=margin_loss,
             optimizer=optimizer,
             device=device,
+            max_epoch=10
         )
+
+
+def validation(classifiers):
+    clf = classifiers[0]
+    net = clf.net
+    dataset = TinyImagenetDataset(
+        data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
+    )
+    loader = torch.utils.data.DataLoader(
+        dataset, batch_size=1, shuffle=True, num_workers=4
+    )
+
+    for i, data in enumerate(loader, 0):
+        print(i, data.size())
+        print(net(data.to(device)))
+
 
 
 if __name__ == "__main__":
@@ -115,3 +131,15 @@ if __name__ == "__main__":
     classifiers = [
         Classifier(class_to_id=class_to_id) for class_to_id in class_to_id_list
     ]
+
+    validation(classifiers)
+
+    """
+
+    for classifier in classifiers:
+        print()
+        print("## !")
+        classifier.trainer.train()
+
+
+    """

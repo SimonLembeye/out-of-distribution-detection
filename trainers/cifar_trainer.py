@@ -37,7 +37,7 @@ class Cifar10Trainer(abcTrainer):
 
             running_loss += loss.item()
 
-        print(running_loss)
+        print(f"epoch {self.epoch}: {running_loss}")
 
     def validate(self):
         print("Ok val")

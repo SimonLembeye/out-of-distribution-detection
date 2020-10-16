@@ -35,7 +35,6 @@ def margin_loss(outputs, target, beta=0.2, m=1):
     ood_entropy /= len(id_outputs)
 
     m_loss = m + id_entropy - ood_entropy
-    print(ce_loss, m_loss)
 
     if m_loss > 0:
         return ce_loss + beta * m_loss
