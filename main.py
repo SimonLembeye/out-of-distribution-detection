@@ -29,9 +29,11 @@ class Classifier:
     def __init__(self, class_to_id={}):
         ood_list = []
         id_list = []
+        self.id_to_class = {}
         for class_name in CLASSES:
             if class_name in class_to_id.keys():
                 id_list.append(class_name)
+                self.id_to_class[class_to_id[class_name]] = class_name
             else:
                 ood_list.append(class_name)
 
@@ -54,24 +56,43 @@ class Classifier:
             loss=margin_loss,
             optimizer=optimizer,
             device=device,
-            max_epoch=10
+            max_epoch=10,
         )
 
 
 def validation(classifiers):
-    clf = classifiers[0]
-    net = clf.net
     dataset = TinyImagenetDataset(
         data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
     )
     loader = torch.utils.data.DataLoader(
-        dataset, batch_size=1, shuffle=True, num_workers=4
+        dataset, batch_size=3, shuffle=True, num_workers=4
     )
 
-    for i, data in enumerate(loader, 0):
-        print(i, data.size())
-        print(net(data.to(device)))
+    scores = {
+        "airplane": 0,
+        "automobile": 0,
+        "bird": 0,
+        "cat": 0,
+        "deer": 0,
+        "dog": 0,
+        "frog": 0,
+        "horse": 0,
+        "ship": 0,
+        "truck": 0,
+    }
 
+    for i, data in enumerate(loader, 0):
+
+        clf = classifiers[0]
+        net = clf.net
+        id_to_class = clf.id_to_class
+        out = net(data.to(device)) # softmax function needs to be added
+
+        for res in out:
+            for j in range(len(res)):
+                scores[clf.id_to_class[j]] += res[j].item()
+
+        print(scores)
 
 
 if __name__ == "__main__":
