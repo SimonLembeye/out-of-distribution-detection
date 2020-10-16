@@ -85,11 +85,13 @@ def validation(classifiers):
 
         clf = classifiers[0]
         net = clf.net
-        id_to_class = clf.id_to_class
         out = net(data.to(device)) # softmax function needs to be added
+
+
 
         for res in out:
             for j in range(len(res)):
+                # print(res)
                 scores[clf.id_to_class[j]] += res[j].item()
 
         print(scores)
