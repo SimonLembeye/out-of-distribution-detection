@@ -22,6 +22,7 @@ class abcTrainer(ABC):
             # validation
             if epoch % self.validation_frequency == 0:
                 self.validate()
+                print()
 
         print(f'Train finished')
 
