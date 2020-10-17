@@ -10,7 +10,7 @@ class Cifar10Dataset(Dataset):
         self.data_dir = data_dir
         self.id_class_list = id_class_list
         self.ood_class_list = ood_class_list
-        self.class_to_id = {}
+        self.class_to_id = class_to_id
         if transform:
             self.transform = transform
         else:
@@ -30,7 +30,7 @@ class Cifar10Dataset(Dataset):
 
         idx += 1  # image names go from 1 to 5000
 
-        if not len(self.class_to_id):
+        if len(self.class_to_id):
             for i in range(len(self.id_class_list)):
                 self.class_to_id[self.id_class_list[i]] = i
 
