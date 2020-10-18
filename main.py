@@ -110,15 +110,46 @@ def validation(classifiers, dataset):
             clf = classifiers[j]
             net = clf.net
             out = net(images.to(device))  # softmax function needs to be added
-
+            
+            #temperature scale
+            T=1
+    
             for k in range(len(out)):
                 res = out[k]
+                image = images[k]
+                label = labels[k]
                 for j in range(len(res)):
                     scores[clf.id_to_class[j]] += res[j].item()
 
                 image_counter += 1
                 sm = soft_max(res)
                 entropy = Categorical(probs=sm).entropy()
+                
+                
+                #using paper notation
+                x = image.requires_grad_()
+                F_x = sm
+                
+                #temperatur scaled softmax vector
+                F_xT = F_x/T
+                entropy_T = Categorical(probs=F_xT).entropy()
+                
+                #get gradient d(F_x/T)/d(x)
+                #TODO: fix loss_metric(F_xT, label)
+                loss_metric =nn.CrossEntropyLoss()
+
+                print(F_xT)
+                print(label)
+                loss = loss_metric(F_xT, label)
+                loss.backward()
+                
+                #get the gradient
+                gradient = x.grad
+                
+                #perbutated inputs
+                x_T = x - eps*torch.sign(gradient)
+                
+                ood_scores_T[k] += (torch.max(F_xT) - entropy_T).item()           
                 # TO DO: Add gradient over cross entropy loss step
                 # TO DO: Add temperature scaling
                 ood_scores[k] += (torch.max(sm) - entropy).item()
@@ -188,8 +219,9 @@ if __name__ == "__main__":
     classifiers = [
         Classifier(class_to_id=class_to_id) for class_to_id in class_to_id_list
     ]
-
-    for _ in range(200):
+    
+  
+    for _ in range(5):
 
         print("Validation CIFAR10")
         transform = transforms.Compose(
@@ -211,4 +243,6 @@ if __name__ == "__main__":
             print()
             print("## !")
             classifier.trainer.train()
+            
+            
 
