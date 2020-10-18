@@ -55,6 +55,7 @@ class Cifar10Trainer(abcTrainer):
         self.net.eval()
         running_accuracy = 0.0
         id_images_counter = 0
+        
         for i, data in enumerate(self.validation_loader, 0):
             id_images, ood_images, id_labels, ood_labels = (
                 data["id_images"],
@@ -63,7 +64,8 @@ class Cifar10Trainer(abcTrainer):
                 data["ood_labels"],
             )
             id_images = id_images.to(self.device)
-
+            
+            #get accuracy of model
             for j in range(len(id_labels)):
                 outputs = self.net(id_images[:, j, :, :, :])
                 id_labels[j] = id_labels[j].to(self.device)
@@ -71,7 +73,25 @@ class Cifar10Trainer(abcTrainer):
                 acc = torch.sum(pred == id_labels[j]).item()
                 running_accuracy += acc
                 id_images_counter += pred.size()[0]
-
+            
+            """
+            #get OOD accuracy of model
+            for j in range(len(ood_labels)):
+                #TODO: get outputs_ood from algorithm 2: OOD score
+                #ood_score = algorithm_2(ood_images[:, j, :, :, :])
+                
+                #ood_score low for ood and high or id
+                threshold = 0.3
+                acc_ood = torch.sum(ood_score < threshold).item()
+                running_accuracy_ood += acc_ood
+                ood_images_counter += pred_ood.size()[0]
+        
+        
         running_accuracy /= id_images_counter
-
+        print(f"epoch {self.epoch}: OOD_accuracy (oods): {running_accuracy}")
+        """
+        running_accuracy /= id_images_counter
         print(f"epoch {self.epoch}: validation_accuracy (ids): {running_accuracy}")
+        
+        #save the best model
+        
