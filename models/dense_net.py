@@ -59,10 +59,10 @@ class DenseNet(nn.Module):
 
         self.block3 = DenseBlock(num_channels, growth_rate, depth)
         num_channels = num_channels + depth * growth_rate
+        self.num_channels = num_channels
 
         self.bn = nn.BatchNorm2d(num_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.pool = nn.AvgPool2d(8)
         self.fc = nn.Linear(num_channels, num_classes)
 
     def forward(self, x):
@@ -72,6 +72,7 @@ class DenseNet(nn.Module):
         x = self.block3(x)
         x = self.bn(x)
         x = self.relu(x)
-        x = self.pool(x)
+        x = F.avg_pool2d(x, 8)
+        x = x.view(-1, self.num_channels)
         x = self.fc(x)
         return x
