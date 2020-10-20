@@ -11,6 +11,8 @@ from torch.distributions import Categorical
 import torch.nn as nn
 from torchvision.transforms import transforms
 import torchvision
+from torch.autograd import Variable
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Using gpu: %s " % torch.cuda.is_available())
@@ -78,7 +80,10 @@ class Classifier:
 
 
 def validation(classifiers, dataset):
+    #softmax
+    softi = nn.Softmax(dim=1)
 
+    #no need to give it batches?
     batch_size = 256
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=4
@@ -86,81 +91,56 @@ def validation(classifiers, dataset):
 
     ood_sum = 0
     image_counter = 0
-
-    for i, data in enumerate(loader, 0):
-
-        images, labels = data
-
-        scores = {
-            "airplane": 0,
-            "automobile": 0,
-            "bird": 0,
-            "cat": 0,
-            "deer": 0,
-            "dog": 0,
-            "frog": 0,
-            "horse": 0,
-            "ship": 0,
-            "truck": 0,
-        }
-        ood_scores = [0 for _ in range(batch_size)]
-
-        for j in range(len(classifiers)):
-
-            clf = classifiers[j]
-            net = clf.net
-            out = net(images.to(device))  # softmax function needs to be added
-            
-            #temperature scale
-            T=1
     
-            for k in range(len(out)):
-                res = out[k]
-                image = images[k]
-                label = labels[k]
-                for j in range(len(res)):
-                    scores[clf.id_to_class[j]] += res[j].item()
+    scores = {
+        "airplane": 0,
+        "automobile": 0,
+        "bird": 0,
+        "cat": 0,
+        "deer": 0,
+        "dog": 0,
+        "frog": 0,
+        "horse": 0,
+        "ship": 0,
+        "truck": 0,
+    }
+    
+    data = next(iter(loader))
+    images, labels = data
+    ood_scores = torch.zeros(batch_size)
+    T=1000
+    eps = 0.002
+    for j in range(len(classifiers)):
 
-                image_counter += 1
-                sm = soft_max(res)
-                entropy = Categorical(probs=sm).entropy()
-                
-                
-                #using paper notation
-                x = image.requires_grad_()
-                F_x = sm
-                
-                #temperatur scaled softmax vector
-                F_xT = F_x/T
-                entropy_T = Categorical(probs=F_xT).entropy()
-                
-                #get gradient d(F_x/T)/d(x)
-                #TODO: fix loss_metric(F_xT, label)
-                loss_metric =nn.CrossEntropyLoss()
+        clf = classifiers[j]
+        net = clf.net
+        
+        x = images.to(device).requires_grad_()        
+        F_x = softi(net(x))
+        F_xT = F_x / T
+        H_F_xT = Categorical(probs=F_xT).entropy()
+            
+        #get dH_F_xT/dx
+        loss = H_F_xT
+        loss.sum().backward()
+        gradient = x.grad
+        
+        #peturbate and get F_xpT
+        x_p = x - eps*torch.sign(gradient)
+        F_xpT = softi(net(x_p))
+        F_xpT = F_xpT /T
+        H_F_xpT = Categorical(probs=F_xpT).entropy()
+        
+        #get ood_score
+        ood_scores += torch.max(F_xpT,1)[0] - H_F_xpT
+        
 
-                print(F_xT)
-                print(label)
-                loss = loss_metric(F_xT, label)
-                loss.backward()
-                
-                #get the gradient
-                gradient = x.grad
-                
-                #perbutated inputs
-                x_T = x - eps*torch.sign(gradient)
-                
-                ood_scores_T[k] += (torch.max(F_xT) - entropy_T).item()           
-                # TO DO: Add gradient over cross entropy loss step
-                # TO DO: Add temperature scaling
-                ood_scores[k] += (torch.max(sm) - entropy).item()
-
-        ood_sum += sum(ood_scores)
 
     print()
-    print(image_counter)
-    print(ood_sum)
-    print(ood_sum / image_counter)
-
+    #print(ood_scores)
+    #print(ood_sum.shape)
+    print(ood_scores / batch_size )
+    
 
 if __name__ == "__main__":
     class_to_id_list = [
@@ -221,7 +201,7 @@ if __name__ == "__main__":
     ]
     
   
-    for _ in range(5):
+    for _ in range(1):
 
         print("Validation CIFAR10")
         transform = transforms.Compose(
@@ -230,19 +210,21 @@ if __name__ == "__main__":
 
         cifar_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,
                                                 download=True, transform=transform)
+        print('start ood')
         validation(classifiers, cifar_dataset)
+        print('end ood')
 
-        print("Validation Tinyimagenet")
-        tiny_dataset = TinyImagenetDataset(
-            data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
-        )
-        validation(classifiers, tiny_dataset)
+        # print("Validation Tinyimagenet")
+        # tiny_dataset = TinyImagenetDataset(
+        #     data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
+        # )
+        # validation(classifiers, tiny_dataset)
 
-        for classifier in classifiers:
-            print()
-            print()
-            print("## !")
-            classifier.trainer.train()
+        # for classifier in classifiers:
+        #     print()
+        #     print()
+        #     print("## !")
+        #     classifier.trainer.train()
             
             
 
