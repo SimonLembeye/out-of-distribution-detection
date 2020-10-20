@@ -3,16 +3,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 from math import floor
 
+
 class DenseLayer(nn.Module):
     def __init__(self, num_channels, growth_rate):
         super(DenseLayer, self).__init__()
         self.bn1 = nn.BatchNorm2d(num_channels)
         self.relu1 = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(num_channels, 4 * growth_rate, 1, bias = False)
+        self.conv1 = nn.Conv2d(num_channels, 4 * growth_rate, 1, bias=False)
         self.bn2 = nn.BatchNorm2d(4 * growth_rate)
         self.relu2 = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(4 * growth_rate, growth_rate, 3, padding = 1, bias = False)
-    
+        self.conv2 = nn.Conv2d(4 * growth_rate, growth_rate, 3, padding=1, bias=False)
+
     def forward(self, x):
         output = self.relu1(self.bn1(x))
         output = self.conv1(output)
@@ -20,8 +21,9 @@ class DenseLayer(nn.Module):
         output = self.conv2(output)
         return torch.cat([x, output], 1)
 
+
 class DenseBlock(nn.Module):
-    def __init__(self, num_channels, growth_rate = 12, depth = 100):
+    def __init__(self, num_channels, growth_rate=12, depth=100):
         super(DenseBlock, self).__init__()
         layers = []
         for i in range(depth):
@@ -30,21 +32,25 @@ class DenseBlock(nn.Module):
 
     def forward(self, x):
         return self.dense_block(x)
-        
+
+
 class Transition(nn.Module):
-    def __init__(self, num_channels, compression = .5):
+    def __init__(self, num_channels, compression=0.5):
         super(Transition, self).__init__()
         self.bn = nn.BatchNorm2d(num_channels)
-        self.conv = nn.Conv2d(num_channels, floor(compression * num_channels), 1, bias = False)
+        self.conv = nn.Conv2d(
+            num_channels, floor(compression * num_channels), 1, bias=False
+        )
         self.pool = nn.AvgPool2d(2)
 
     def forward(self, x):
         return self.pool(self.conv(self.bn(x)))
 
+
 class DenseNet(nn.Module):
-    def __init__(self, num_classes, growth_rate = 12, depth = 100, compression = .5):
+    def __init__(self, num_classes=8, growth_rate=12, depth=100, compression=0.5):
         super(DenseNet, self).__init__()
-        self.conv = nn.Conv2d(3, 2*growth_rate, 3, bias = False)
+        self.conv = nn.Conv2d(3, 2 * growth_rate, 3, bias=False)
         num_channels = 2 * growth_rate
 
         self.block1 = DenseBlock(num_channels, growth_rate, depth)
@@ -72,7 +78,7 @@ class DenseNet(nn.Module):
         x = self.block3(x)
         x = self.bn(x)
         x = self.relu(x)
-        x = F.avg_pool2d(x, 8)
+        x = F.avg_pool2d(x, 4)
         x = x.view(-1, self.num_channels)
         x = self.fc(x)
         return x

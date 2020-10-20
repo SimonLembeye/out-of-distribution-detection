@@ -4,6 +4,7 @@ import torch.nn as nn
 import torchvision
 from torchvision.transforms import transforms
 
+from models.dense_net import DenseNet
 from models.toy_net import ToyNet
 from trainers.toy_trainer import ToyTrainer
 
@@ -18,14 +19,14 @@ if __name__ == '__main__':
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=2,
                                               shuffle=True, num_workers=2)
 
     # resnet50 = models.resnet50(pretrained=True)
 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-    net = ToyNet().to(device)
+    net = DenseNet(num_classes=10).to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = optim.SGD(net.parameters(), lr=0.032, momentum=0.9)
 
