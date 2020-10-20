@@ -4,6 +4,7 @@ import os
 from datasets.cifar10 import Cifar10Dataset
 from datasets.tiny_imagenet import TinyImagenetDataset
 from loss import margin_loss
+from models.dense_net import DenseNet
 from models.toy_net import ToyNet
 import torch.optim as optim
 from trainers.cifar_trainer import Cifar10Trainer
@@ -62,11 +63,12 @@ class Classifier:
         )
 
         validation_loader = torch.utils.data.DataLoader(
-            validation_dataset, batch_size=256, shuffle=True, num_workers=3
+            validation_dataset, batch_size=2, shuffle=True, num_workers=3
         )
 
-        self.net = ToyNet(class_nb=8).to(device)
-        optimizer = optim.SGD(self.net.parameters(), lr=0.01, momentum=0.9)
+        # self.net = ToyNet(class_nb=8).to(device)
+        self.net = DenseNet(num_classes=8, depth=2).to(device)
+        optimizer = optim.SGD(self.net.parameters(), lr=0.005, momentum=0.9)
         self.trainer = Cifar10Trainer(
             dataloader=[train_loader, validation_loader],
             net=self.net,
