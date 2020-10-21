@@ -29,4 +29,4 @@ class TinyImagenetDataset(Dataset):
         image = cv2.resize(cv2.imread(image_path), (32, 32))
         image = self.transform(image)
 
-        return image, "label" # read label in txt files if needed
+        return image, "label" # read label in txt file if needed

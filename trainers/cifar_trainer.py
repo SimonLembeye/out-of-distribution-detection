@@ -30,8 +30,11 @@ class Cifar10Trainer(abcTrainer):
             id_outputs = []
             ood_outputs = []
 
+            id_images = id_images.to(self.device)
+            ood_images = ood_images.to(self.device)
+
             for j in range(len(id_labels)):
-                outputs = self.net(id_images[:, j, :, :, :].to(self.device))
+                outputs = self.net(id_images[:, j, :, :, :])
                 id_outputs.append(outputs)
                 id_labels[j] = id_labels[j].to(self.device)
 
@@ -43,7 +46,7 @@ class Cifar10Trainer(abcTrainer):
                 running_id_images_counter += pred.size()[0]
 
             for j in range(ood_images.size()[1]):
-                outputs = self.net(ood_images[:, j, :, :, :].to(self.device))
+                outputs = self.net(ood_images[:, j, :, :, :])
                 ood_outputs.append(outputs)
 
             self.optimizer.zero_grad()
@@ -54,7 +57,7 @@ class Cifar10Trainer(abcTrainer):
             epoch_loss += loss.item()
             running_loss += loss.item()
 
-            if i % 50 == 0:
+            if i % 5 == 0:
                 print(f"step: {i} | running loss: {running_loss / running_id_images_counter} | running accuracy: {running_accuracy / running_id_images_counter} | training time: {time.time() - start}")
                 running_loss = 0.0
                 running_accuracy = 0.0

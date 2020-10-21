@@ -51,6 +51,7 @@ class Classifier:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
 
+        self.id = id
         self.train_name = train_name
         self.best_weights_path = os.path.join(
             "train_models_weights", train_name, f"{id}.pth"
@@ -64,7 +65,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=2, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=256, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -75,7 +76,7 @@ class Classifier:
         )
 
         self.validation_loader = torch.utils.data.DataLoader(
-            self.validation_dataset, batch_size=2, shuffle=True, num_workers=3
+            self.validation_dataset, batch_size=256, shuffle=True, num_workers=3
         )
 
     def get_and_update_current_trainer(self):
@@ -98,7 +99,7 @@ class Classifier:
 
 def validation(classifiers, dataset):
 
-    batch_size = 2
+    batch_size = 256
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=4
     )
@@ -106,45 +107,60 @@ def validation(classifiers, dataset):
     ood_sum = 0
     image_counter = 0
 
+    temperature = 1
+
+    ood_scores = [0 for _ in range(batch_size)]
+
+    scores = {
+        "airplane": [0 for _ in range(batch_size)],
+        "automobile": [0 for _ in range(batch_size)],
+        "bird": [0 for _ in range(batch_size)],
+        "cat": [0 for _ in range(batch_size)],
+        "deer": [0 for _ in range(batch_size)],
+        "dog": [0 for _ in range(batch_size)],
+        "frog": [0 for _ in range(batch_size)],
+        "horse": [0 for _ in range(batch_size)],
+        "ship": [0 for _ in range(batch_size)],
+        "truck": [0 for _ in range(batch_size)],
+    }
+
     for j in range(len(classifiers)):
 
         clf = classifiers[j]
         if os.path.exists(clf.best_weights_path):
             NET.load_state_dict(torch.load(clf.best_weights_path))
 
+        image_counter = 0
+
         for i, data in enumerate(loader, 0):
 
-            images, labels = data
+            if i > 0:
+                break
 
-            scores = {
-                "airplane": 0,
-                "automobile": 0,
-                "bird": 0,
-                "cat": 0,
-                "deer": 0,
-                "dog": 0,
-                "frog": 0,
-                "horse": 0,
-                "ship": 0,
-                "truck": 0,
-            }
-            ood_scores = [0 for _ in range(batch_size)]
+            images, labels = data
 
             out = NET(images.to(device))  # softmax function needs to be added
 
             for k in range(len(out)):
                 res = out[k]
                 for j in range(len(res)):
-                    scores[clf.id_to_class[j]] += res[j].item()
+                    scores[clf.id_to_class[j]][k] += res[j].item()
 
                 image_counter += 1
-                sm = soft_max(res)
-                entropy = Categorical(probs=sm).entropy()
+
+                # print()
+                # print(res)
+                # print(res * temperature)
+                sm = soft_max(res * temperature)
+                # print(sm)
+                entropy = Categorical(probs=sm * temperature).entropy()
+                # print(entropy)
                 # TO DO: Add gradient over cross entropy loss step
-                # TO DO: Add temperature scaling
                 ood_scores[k] += (torch.max(sm) - entropy).item()
 
-        ood_sum += sum(ood_scores)
+
+    # print(ood_scores)
+    ood_sum += sum(ood_scores)
 
     print()
     print(image_counter)
@@ -208,20 +224,12 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="dense_train_1021202002", id=k
+            class_to_id=class_to_id_list[k], train_name="toy_train_1021202002", id=k
         )
         for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
-
-        for classifier in classifiers:
-            print()
-            print()
-            print("## !")
-            trainer = classifier.get_and_update_current_trainer()
-            trainer.train()
-            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
         print("Validation CIFAR10")
         transform = transforms.Compose(
@@ -238,9 +246,25 @@ if __name__ == "__main__":
 
         print("Validation Tinyimagenet")
         tiny_dataset = TinyImagenetDataset(
-            data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
+            data_dir=os.path.join("data", "tiny-imagenet-200", "mini_val", "images"),
         )
         validation(classifiers, tiny_dataset)
+
+        print()
+
+        for classifier in classifiers:
+            print()
+            print(f"## Train classifier {classifier.id}!")
+            trainer = classifier.get_and_update_current_trainer()
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
+
+
+
+
+
+
+
 
 
 
