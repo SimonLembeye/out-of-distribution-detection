@@ -32,7 +32,7 @@ CLASSES = [
 ]
 
 # NET = ToyNet(class_nb=8).to(device)
-NET = DenseNet(num_classes=8, depth=100).to(device)
+NET = DenseNet(num_classes=8, depth=50).to(device)
 
 
 class Classifier:
@@ -64,7 +64,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=4, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=2, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -98,7 +98,7 @@ class Classifier:
 
 def validation(classifiers, dataset):
 
-    batch_size = 4
+    batch_size = 2
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=4
     )
