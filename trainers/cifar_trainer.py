@@ -23,11 +23,8 @@ class Cifar10Trainer(abcTrainer):
             id_outputs = []
             ood_outputs = []
 
-            id_images = id_images.to(self.device)
-            ood_images = ood_images.to(self.device)
-
             for j in range(len(id_labels)):
-                outputs = self.net(id_images[:, j, :, :, :])
+                outputs = self.net(id_images[:, j, :, :, :].to(self.device))
                 id_outputs.append(outputs)
                 id_labels[j] = id_labels[j].to(self.device)
 
@@ -37,7 +34,7 @@ class Cifar10Trainer(abcTrainer):
                 id_images_counter += pred.size()[0]
 
             for j in range(ood_images.size()[1]):
-                outputs = self.net(ood_images[:, j, :, :, :])
+                outputs = self.net(ood_images[:, j, :, :, :].to(self.device))
                 ood_outputs.append(outputs)
 
             self.optimizer.zero_grad()
