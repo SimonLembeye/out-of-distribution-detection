@@ -33,7 +33,7 @@ CLASSES = [
 
 
 class Classifier:
-    def __init__(self, class_to_id={}):
+    def __init__(self, train_name="toy_train", id=0, class_to_id={}):
         ood_list = []
         id_list = []
         self.id_to_class = {}
@@ -44,39 +44,52 @@ class Classifier:
             else:
                 ood_list.append(class_name)
 
-        train_dataset = Cifar10Dataset(
+        dir_path = os.path.join("train_models_weights", train_name)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
+        self.train_name = train_name
+        self.best_weights_path = os.path.join("train_models_weights", train_name, f"{id}.pth")
+
+        self.train_dataset = Cifar10Dataset(
             data_dir=os.path.join("data", "cifar-10", "train"),
             id_class_list=id_list,
             ood_class_list=ood_list,
             class_to_id=class_to_id,
         )
 
-        train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=256, shuffle=True, num_workers=3
+        self.train_loader = torch.utils.data.DataLoader(
+            self.train_dataset, batch_size=256, shuffle=True, num_workers=3
         )
 
-        validation_dataset = Cifar10Dataset(
+        self.validation_dataset = Cifar10Dataset(
             data_dir=os.path.join("data", "cifar-10", "test"),
             id_class_list=id_list,
             ood_class_list=ood_list,
             class_to_id=class_to_id,
         )
 
-        validation_loader = torch.utils.data.DataLoader(
-            validation_dataset, batch_size=2, shuffle=True, num_workers=3
+        self.validation_loader = torch.utils.data.DataLoader(
+            self.validation_dataset, batch_size=2, shuffle=True, num_workers=3
         )
 
-        # self.net = ToyNet(class_nb=8).to(device)
-        self.net = DenseNet(num_classes=8, depth=2).to(device)
-        optimizer = optim.SGD(self.net.parameters(), lr=0.005, momentum=0.9)
-        self.trainer = Cifar10Trainer(
-            dataloader=[train_loader, validation_loader],
-            net=self.net,
+    def get_and_update_current_trainer(self):
+        net = ToyNet(class_nb=8).to(device)
+        if os.path.exists(self.best_weights_path):
+            net.load_state_dict(torch.load(self.best_weights_path))
+        # self.net = DenseNet(num_classes=8, depth=2).to(device)
+        optimizer = optim.SGD(net.parameters(), lr=0.005, momentum=0.9)
+        trainer = Cifar10Trainer(
+            dataloader=[self.train_loader, self.validation_loader],
+            net=net,
             loss=margin_loss,
             optimizer=optimizer,
             device=device,
-            max_epoch=5,
+            max_epoch=2,
         )
+        self.trainer = trainer
+        return trainer
+
 
 
 def validation(classifiers, dataset):
@@ -88,6 +101,8 @@ def validation(classifiers, dataset):
 
     ood_sum = 0
     image_counter = 0
+
+    net = ToyNet(class_nb=8).to(device)
 
     for i, data in enumerate(loader, 0):
 
@@ -110,7 +125,8 @@ def validation(classifiers, dataset):
         for j in range(len(classifiers)):
 
             clf = classifiers[j]
-            net = clf.net
+            if os.path.exists(clf.best_weights_path):
+                net.load_state_dict(clf.best_weights_path)
             out = net(images.to(device))  # softmax function needs to be added
 
             for k in range(len(out)):
@@ -188,11 +204,10 @@ if __name__ == "__main__":
     ]
 
     classifiers = [
-        Classifier(class_to_id=class_to_id) for class_to_id in class_to_id_list
+        Classifier(class_to_id=class_to_id_list[k], train_name = "toy_train_10212020") for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
-
         print("Validation CIFAR10")
         transform = transforms.Compose(
             [transforms.ToTensor(),
@@ -212,5 +227,7 @@ if __name__ == "__main__":
             print()
             print()
             print("## !")
-            classifier.trainer.train()
+            trainer = classifier.get_and_update_current_trainer()
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 

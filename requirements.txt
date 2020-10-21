@@ -5,7 +5,6 @@ chardet==3.0.4
 cifar2png==0.0.4
 click==7.1.2
 cycler==0.10.0
-dataclasses==0.7
 future==0.18.2
 idna==2.10
 kiwisolver==1.2.0
