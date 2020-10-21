@@ -44,6 +44,9 @@ class Cifar10Trainer(abcTrainer):
 
             running_loss += loss.item()
 
+            if i % 50 == 0:
+                print(f"step: {i} | running accuracy: {running_accuracy / id_images_counter}")
+
         running_accuracy /= id_images_counter
 
         print(f"epoch {self.epoch}: train_margin_loss: {running_loss} | train_accuracy (ids): {running_accuracy}")
