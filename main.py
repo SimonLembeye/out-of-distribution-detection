@@ -31,6 +31,9 @@ CLASSES = [
     "truck",
 ]
 
+NET = ToyNet(class_nb=8).to(device)
+# NET = DenseNet(num_classes=8, depth=100).to(device)
+
 
 class Classifier:
     def __init__(self, train_name="toy_train", id=0, class_to_id={}):
@@ -76,15 +79,14 @@ class Classifier:
         )
 
     def get_and_update_current_trainer(self):
-        # net = ToyNet(class_nb=8).to(device)
-        net = DenseNet(num_classes=8, depth=100).to(device)
-        if os.path.exists(self.best_weights_path):
-            net.load_state_dict(torch.load(self.best_weights_path))
 
-        optimizer = optim.SGD(net.parameters(), lr=0.005, momentum=0.9)
+        if os.path.exists(self.best_weights_path):
+            NET.load_state_dict(torch.load(self.best_weights_path))
+
+        optimizer = optim.SGD(NET.parameters(), lr=0.005, momentum=0.9)
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
-            net=net,
+            net=NET,
             loss=margin_loss,
             optimizer=optimizer,
             device=device,
@@ -103,9 +105,6 @@ def validation(classifiers, dataset):
 
     ood_sum = 0
     image_counter = 0
-
-    # net = ToyNet(class_nb=8).to(device)
-    net = DenseNet(num_classes=8, depth=2).to(device)
 
     for i, data in enumerate(loader, 0):
 
@@ -129,8 +128,8 @@ def validation(classifiers, dataset):
 
             clf = classifiers[j]
             if os.path.exists(clf.best_weights_path):
-                net.load_state_dict(clf.best_weights_path)
-            out = net(images.to(device))  # softmax function needs to be added
+                NET.load_state_dict(torch.load(clf.best_weights_path))
+            out = NET(images.to(device))  # softmax function needs to be added
 
             for k in range(len(out)):
                 res = out[k]
@@ -208,20 +207,12 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="dense_train_1021202001", id=k
+            class_to_id=class_to_id_list[k], train_name="toy_train_1021202001", id=k
         )
         for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
-
-        for classifier in classifiers:
-            print()
-            print()
-            print("## !")
-            trainer = classifier.get_and_update_current_trainer()
-            trainer.train()
-            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
         print("Validation CIFAR10")
         transform = transforms.Compose(
@@ -241,3 +232,13 @@ if __name__ == "__main__":
             data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
         )
         validation(classifiers, tiny_dataset)
+
+        for classifier in classifiers:
+            print()
+            print()
+            print("## !")
+            trainer = classifier.get_and_update_current_trainer()
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
+
+
