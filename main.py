@@ -31,8 +31,8 @@ CLASSES = [
     "truck",
 ]
 
-NET = ToyNet(class_nb=8).to(device)
-# NET = DenseNet(num_classes=8, depth=50).to(device)
+# NET = ToyNet(class_nb=8).to(device)
+NET = DenseNet(num_classes=8, depth=50).to(device)
 
 
 class Classifier:
@@ -65,7 +65,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=256, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=2, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -76,7 +76,7 @@ class Classifier:
         )
 
         self.validation_loader = torch.utils.data.DataLoader(
-            self.validation_dataset, batch_size=256, shuffle=True, num_workers=3
+            self.validation_dataset, batch_size=2, shuffle=True, num_workers=3
         )
 
     def get_and_update_current_trainer(self):
@@ -91,7 +91,7 @@ class Classifier:
             loss=margin_loss,
             optimizer=optimizer,
             device=device,
-            max_epoch=2,
+            max_epoch=1,
         )
         self.trainer = trainer
         return trainer
@@ -99,7 +99,7 @@ class Classifier:
 
 def validation(classifiers, dataset):
 
-    batch_size = 256
+    batch_size = 2
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=4
     )
@@ -224,7 +224,7 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="toy_train_1021202002", id=k
+            class_to_id=class_to_id_list[k], train_name="dense_train_1021202002", id=k
         )
         for k in range(len(class_to_id_list))
     ]

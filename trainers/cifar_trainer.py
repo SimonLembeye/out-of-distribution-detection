@@ -57,7 +57,7 @@ class Cifar10Trainer(abcTrainer):
             epoch_loss += loss.item()
             running_loss += loss.item()
 
-            if i % 5 == 0:
+            if i % 50 == 0:
                 print(f"step: {i} | running loss: {running_loss / running_id_images_counter} | running accuracy: {running_accuracy / running_id_images_counter} | training time: {time.time() - start}")
                 running_loss = 0.0
                 running_accuracy = 0.0
