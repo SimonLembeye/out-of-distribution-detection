@@ -208,6 +208,15 @@ if __name__ == "__main__":
     ]
 
     for _ in range(200):
+
+        for classifier in classifiers:
+            print()
+            print()
+            print("## !")
+            trainer = classifier.get_and_update_current_trainer()
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
+
         print("Validation CIFAR10")
         transform = transforms.Compose(
             [transforms.ToTensor(),
@@ -222,12 +231,4 @@ if __name__ == "__main__":
             data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
         )
         validation(classifiers, tiny_dataset)
-
-        for classifier in classifiers:
-            print()
-            print()
-            print("## !")
-            trainer = classifier.get_and_update_current_trainer()
-            trainer.train()
-            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
