@@ -49,7 +49,9 @@ class Classifier:
             os.makedirs(dir_path)
 
         self.train_name = train_name
-        self.best_weights_path = os.path.join("train_models_weights", train_name, f"{id}.pth")
+        self.best_weights_path = os.path.join(
+            "train_models_weights", train_name, f"{id}.pth"
+        )
 
         self.train_dataset = Cifar10Dataset(
             data_dir=os.path.join("data", "cifar-10", "train"),
@@ -59,7 +61,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=256, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=4, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -74,10 +76,11 @@ class Classifier:
         )
 
     def get_and_update_current_trainer(self):
-        net = ToyNet(class_nb=8).to(device)
+        # net = ToyNet(class_nb=8).to(device)
+        net = DenseNet(num_classes=8, depth=100).to(device)
         if os.path.exists(self.best_weights_path):
             net.load_state_dict(torch.load(self.best_weights_path))
-        # self.net = DenseNet(num_classes=8, depth=2).to(device)
+
         optimizer = optim.SGD(net.parameters(), lr=0.005, momentum=0.9)
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
@@ -91,10 +94,9 @@ class Classifier:
         return trainer
 
 
-
 def validation(classifiers, dataset):
 
-    batch_size = 256
+    batch_size = 4
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=4
     )
@@ -102,7 +104,8 @@ def validation(classifiers, dataset):
     ood_sum = 0
     image_counter = 0
 
-    net = ToyNet(class_nb=8).to(device)
+    # net = ToyNet(class_nb=8).to(device)
+    net = DenseNet(num_classes=8, depth=2).to(device)
 
     for i, data in enumerate(loader, 0):
 
@@ -204,7 +207,10 @@ if __name__ == "__main__":
     ]
 
     classifiers = [
-        Classifier(class_to_id=class_to_id_list[k], train_name = "toy_train_10212020") for k in range(len(class_to_id_list))
+        Classifier(
+            class_to_id=class_to_id_list[k], train_name="dense_train_1021202001", id=k
+        )
+        for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
@@ -219,11 +225,15 @@ if __name__ == "__main__":
 
         print("Validation CIFAR10")
         transform = transforms.Compose(
-            [transforms.ToTensor(),
-             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
+        )
 
-        cifar_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                                download=True, transform=transform)
+        cifar_dataset = torchvision.datasets.CIFAR10(
+            root="./data", train=False, download=True, transform=transform
+        )
         validation(classifiers, cifar_dataset)
 
         print("Validation Tinyimagenet")
@@ -231,4 +241,3 @@ if __name__ == "__main__":
             data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
         )
         validation(classifiers, tiny_dataset)
-
