@@ -31,8 +31,8 @@ CLASSES = [
     "truck",
 ]
 
-# NET = ToyNet(class_nb=8).to(device)
-NET = DenseNet(num_classes=8, depth=50).to(device)
+NET = ToyNet(class_nb=8).to(device)
+# NET = DenseNet(num_classes=8, depth=50).to(device)
 
 
 class Classifier:

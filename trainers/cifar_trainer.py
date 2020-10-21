@@ -1,5 +1,6 @@
 import torch
 from trainers.abc_trainer import abcTrainer
+import time
 
 
 class Cifar10Trainer(abcTrainer):
@@ -9,9 +10,15 @@ class Cifar10Trainer(abcTrainer):
 
     def train_epoch(self):
         self.net.train()
+        start = time.time()
+        epoch_loss = 0.0
+        epoch_accuracy = 0.0
+        epoch_id_images_counter = 0
+
         running_loss = 0.0
         running_accuracy = 0.0
-        id_images_counter = 0
+        running_id_images_counter = 0
+
         for i, data in enumerate(self.train_loader, 0):
             id_images, ood_images, id_labels, ood_labels = (
                 data["id_images"],
@@ -30,8 +37,10 @@ class Cifar10Trainer(abcTrainer):
 
                 pred = torch.argmax(outputs, dim=1)
                 acc = torch.sum(pred == id_labels[j]).item()
+                epoch_accuracy += acc
                 running_accuracy += acc
-                id_images_counter += pred.size()[0]
+                epoch_id_images_counter += pred.size()[0]
+                running_id_images_counter += pred.size()[0]
 
             for j in range(ood_images.size()[1]):
                 outputs = self.net(ood_images[:, j, :, :, :].to(self.device))
@@ -42,14 +51,18 @@ class Cifar10Trainer(abcTrainer):
             loss.backward()
             self.optimizer.step()
 
+            epoch_loss += loss.item()
             running_loss += loss.item()
 
             if i % 50 == 0:
-                print(f"step: {i} | running accuracy: {running_accuracy / id_images_counter}")
+                print(f"step: {i} | running loss: {running_loss / running_id_images_counter} | running accuracy: {running_accuracy / running_id_images_counter} | training time: {time.time() - start}")
+                running_loss = 0.0
+                running_accuracy = 0.0
+                running_id_images_counter = 0
 
-        running_accuracy /= id_images_counter
+        epoch_accuracy /= epoch_id_images_counter
 
-        print(f"epoch {self.epoch}: train_margin_loss: {running_loss} | train_accuracy (ids): {running_accuracy}")
+        print(f"epoch {self.epoch}: train_margin_loss: {epoch_loss} | train_accuracy (ids): {epoch_accuracy}")
 
     def validate(self):
         self.net.eval()
