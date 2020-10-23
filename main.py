@@ -12,6 +12,8 @@ import torch.nn as nn
 from torchvision.transforms import transforms
 import torchvision
 from torch.autograd import Variable
+from results import resultss
+
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -114,10 +116,11 @@ def validation(classifiers, dataset):
 
         clf = classifiers[j]
         net = clf.net
+       
         
         x = images.to(device).requires_grad_()        
         F_x = softi(net(x))
-        F_xT = F_x / T
+        F_xT = F_x * T
         H_F_xT = Categorical(probs=F_xT).entropy()
             
         #get dH_F_xT/dx
@@ -128,18 +131,40 @@ def validation(classifiers, dataset):
         #peturbate and get F_xpT
         x_p = x - eps*torch.sign(gradient)
         F_xpT = softi(net(x_p))
-        F_xpT = F_xpT /T
+        F_xpT = F_xpT * T
         H_F_xpT = Categorical(probs=F_xpT).entropy()
+        
+        #print(F_xpT)
+        #print(torch.max(F_xpT,1)[0])
+        #print(H_F_xpT)
         
         #get ood_score
         ood_scores += torch.max(F_xpT,1)[0] - H_F_xpT
+       
         
 
-
+    ood_scores=ood_scores.detach().numpy()
     print()
     #print(ood_scores)
     #print(ood_sum.shape)
     print(ood_scores / batch_size )
+    return ood_scores / batch_size
+    
+def plot_dist(x,y):
+    #x=x.detach().numpy()
+    #y=y.detach().numpy()
+    import random
+    import numpy
+    from matplotlib import pyplot
+ 
+    x = [random.gauss(4,2) for _ in range(400)]   
+ 
+    bins = numpy.linspace(-10, 10, 100)
+    
+    pyplot.hist(x, bins, alpha=0.5, label='x')
+    pyplot.hist(y, bins, alpha=0.5, label='y')
+    pyplot.legend(loc='upper right')
+    pyplot.show()
     
 
 if __name__ == "__main__":
@@ -202,29 +227,41 @@ if __name__ == "__main__":
     
   
     for _ in range(1):
-
-        print("Validation CIFAR10")
-        transform = transforms.Compose(
-            [transforms.ToTensor(),
-             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-        cifar_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                                download=True, transform=transform)
-        print('start ood')
-        validation(classifiers, cifar_dataset)
-        print('end ood')
-
-        # print("Validation Tinyimagenet")
-        # tiny_dataset = TinyImagenetDataset(
-        #     data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
-        # )
-        # validation(classifiers, tiny_dataset)
-
+        # i=0
         # for classifier in classifiers:
         #     print()
-        #     print()
-        #     print("## !")
+        #     print("classifier: "+ str(i))
         #     classifier.trainer.train()
+        #     i=i+1
+            
+            
+        
+        transform = transforms.Compose(
+            [transforms.ToTensor(),
+              transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+        print("Validation cifar")
+        cifar_dataset = torchvision.datasets.CIFAR10(root='./data', train=False,
+                                                download=True, transform=transform)
+    
+        x = validation(classifiers, cifar_dataset)
+        
+
+        print("Validation Tinyimagenet")
+        tiny_dataset = TinyImagenetDataset(
+              data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
+          )
+        y = validation(classifiers, tiny_dataset)
+        
+        
+        plot_dist(x,y)
+        
+        ood_name = "Tinyimagenet"
+        resultss(x,y,ood_name)
+        
+        
+        
+       
             
             
 
