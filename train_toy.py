@@ -21,7 +21,12 @@ if __name__ == '__main__':
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
                                             download=True, transform=transform)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=20,
+                                              shuffle=True, num_workers=2)
+
+    validationset = torchvision.datasets.CIFAR10(root='./data', train=False,
+                                            download=True, transform=transform)
+    validationloader = torch.utils.data.DataLoader(validationset, batch_size=20,
                                               shuffle=True, num_workers=2)
 
     # resnet50 = models.resnet50(pretrained=True)
@@ -34,6 +39,6 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
 
-    trainer = ToyTrainer(dataloader=trainloader, net=net, loss=criterion, optimizer=optimizer, device=device)
+    trainer = ToyTrainer(dataloader=[trainloader, validationloader], net=net, loss=criterion, optimizer=optimizer, device=device)
     trainer.train()
 
