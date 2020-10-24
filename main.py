@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="toy_train_102402", id=k
+            class_to_id=class_to_id_list[k], train_name="wide_train_102401", id=k
         )
         for k in range(len(class_to_id_list))
     ]
