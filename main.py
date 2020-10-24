@@ -1,5 +1,8 @@
 import torch
 import os
+import operator
+
+from torch.autograd import Variable
 
 from datasets.cifar10 import Cifar10Dataset
 from datasets.tiny_imagenet import TinyImagenetDataset
@@ -65,7 +68,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=2, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=32, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -76,7 +79,7 @@ class Classifier:
         )
 
         self.validation_loader = torch.utils.data.DataLoader(
-            self.validation_dataset, batch_size=2, shuffle=True, num_workers=3
+            self.validation_dataset, batch_size=256, shuffle=True, num_workers=3
         )
 
     def get_and_update_current_trainer(self):
@@ -84,7 +87,9 @@ class Classifier:
         if os.path.exists(self.best_weights_path):
             NET.load_state_dict(torch.load(self.best_weights_path))
 
-        optimizer = optim.SGD(NET.parameters(), lr=0.005, momentum=0.9)
+        NET.train()
+
+        optimizer = optim.SGD(NET.parameters(), lr=0.000001, momentum=0.9)
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
             net=NET,
@@ -99,30 +104,31 @@ class Classifier:
 
 def validation(classifiers, dataset):
 
-    batch_size = 2
+    batch_size = 25
     loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=True, num_workers=4
+        dataset, batch_size=batch_size, shuffle=False, num_workers=4
     )
 
-    ood_sum = 0
     image_counter = 0
 
-    temperature = 1
+    temperature = 10
+    epsilon = 0.002
 
-    ood_scores = [0 for _ in range(batch_size)]
-
-    scores = {
-        "airplane": [0 for _ in range(batch_size)],
-        "automobile": [0 for _ in range(batch_size)],
-        "bird": [0 for _ in range(batch_size)],
-        "cat": [0 for _ in range(batch_size)],
-        "deer": [0 for _ in range(batch_size)],
-        "dog": [0 for _ in range(batch_size)],
-        "frog": [0 for _ in range(batch_size)],
-        "horse": [0 for _ in range(batch_size)],
-        "ship": [0 for _ in range(batch_size)],
-        "truck": [0 for _ in range(batch_size)],
+    scores_0 = {
+        "airplane": 0,
+        "automobile": 0,
+        "bird": 0,
+        "cat": 0,
+        "deer": 0,
+        "dog": 0,
+        "frog": 0,
+        "horse": 0,
+        "ship": 0,
+        "truck": 0
     }
+
+    classifiers_scores_list = [[] for _ in range(len(classifiers))]
+    classifiers_ood_scores_list = [[] for _ in range(len(classifiers))]
 
     for j in range(len(classifiers)):
 
@@ -130,42 +136,72 @@ def validation(classifiers, dataset):
         if os.path.exists(clf.best_weights_path):
             NET.load_state_dict(torch.load(clf.best_weights_path))
 
+        NET.eval()
+
         image_counter = 0
+
+        scores_list = []
+        ood_scores_list = []
 
         for i, data in enumerate(loader, 0):
 
-            if i > 0:
+            if i > 5:
                 break
 
             images, labels = data
+            images = Variable(images.to(device), requires_grad=True)
 
-            out = NET(images.to(device))  # softmax function needs to be added
+            NET.zero_grad()
+            out = NET(images)
+
+            # Prediction and entropy with temperature scaling
+            f_x = soft_max(out * temperature)
+            entropy = Categorical(probs=f_x).entropy()
+
+            # Compute gradient over entropy loss step
+            loss = entropy.sum()
+            loss.backward(retain_graph=True)
+            x_ = images - epsilon * torch.sign(images.grad)
+
+            # Compute OOD scores
+            out_ = NET(x_)
+            f_x_ = soft_max(out_ * temperature)
+            entropy_ = Categorical(probs=f_x).entropy()
+
+            ood_scores = (torch.max(f_x_) - entropy_)
 
             for k in range(len(out)):
                 res = out[k]
-                for j in range(len(res)):
-                    scores[clf.id_to_class[j]][k] += res[j].item()
+                img_scores = scores_0.copy()
+                for p in range(len(res)):
+                    img_scores[clf.id_to_class[p]] += res[p].item()
+
+                scores_list.append(img_scores)
+                ood_scores_list.append(ood_scores[k].item())
 
                 image_counter += 1
 
-                # print()
-                # print(res)
-                # print(res * temperature)
-                sm = soft_max(res * temperature)
-                # print(sm)
-                entropy = Categorical(probs=sm * temperature).entropy()
-                # print(entropy)
-                # TO DO: Add gradient over cross entropy loss step
-                ood_scores[k] += (torch.max(sm) - entropy).item()
+        classifiers_scores_list[j] = scores_list
+        classifiers_ood_scores_list[j] = ood_scores_list
 
+    images_nb = len(classifiers_ood_scores_list[0])
+    ood_scores_final_list = [0 for _ in range(images_nb)]
+    prediction_final_list = ["" for _ in range(images_nb)]
+    for i in range(images_nb):
 
-    # print(ood_scores)
-    ood_sum += sum(ood_scores)
+        running_score = scores_0.copy()
 
-    print()
-    print(image_counter)
-    print(ood_sum)
-    print(ood_sum / image_counter)
+        for j in range(len(classifiers)):
+            ood_scores_final_list[i] += classifiers_ood_scores_list[j][i]
+
+            for c in scores_0.keys():
+                running_score[c] = classifiers_scores_list[j][i][c]
+
+        prediction_final_list[i] = max(running_score.items(), key=operator.itemgetter(1))[0]
+
+    print(prediction_final_list)
+    print(ood_scores_final_list)
+    print(sum(ood_scores_final_list))
 
 
 if __name__ == "__main__":
@@ -224,22 +260,12 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="toy_train_1021202001", id=k
+            class_to_id=class_to_id_list[k], train_name="toy_train_102401", id=k
         )
         for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
-
-        print()
-
-        for classifier in classifiers:
-            print()
-            print(f"## Train classifier {classifier.id}!")
-            trainer = classifier.get_and_update_current_trainer()
-            trainer.train()
-            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
-
         print("Validation CIFAR10")
         transform = transforms.Compose(
             [
@@ -255,9 +281,19 @@ if __name__ == "__main__":
 
         print("Validation Tinyimagenet")
         tiny_dataset = TinyImagenetDataset(
-            data_dir=os.path.join("data", "tiny-imagenet-200", "mini_val", "images"),
+            data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
         )
         validation(classifiers, tiny_dataset)
+
+        print()
+
+        for classifier in classifiers:
+            print()
+            print(f"## Train classifier {classifier.id}!")
+            trainer = classifier.get_and_update_current_trainer()
+
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
 
 
