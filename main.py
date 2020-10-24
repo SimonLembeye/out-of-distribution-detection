@@ -147,24 +147,8 @@ def validation(classifiers, dataset):
     print()
     #print(ood_scores)
     #print(ood_sum.shape)
-    print(ood_scores / batch_size )
+    #print(ood_scores / batch_size )
     return ood_scores / batch_size
-    
-def plot_dist(x,y):
-    #x=x.detach().numpy()
-    #y=y.detach().numpy()
-    import random
-    import numpy
-    from matplotlib import pyplot
- 
-    x = [random.gauss(4,2) for _ in range(400)]   
- 
-    bins = numpy.linspace(-10, 10, 100)
-    
-    pyplot.hist(x, bins, alpha=0.5, label='x')
-    pyplot.hist(y, bins, alpha=0.5, label='y')
-    pyplot.legend(loc='upper right')
-    pyplot.show()
     
 
 if __name__ == "__main__":
@@ -253,9 +237,7 @@ if __name__ == "__main__":
           )
         y = validation(classifiers, tiny_dataset)
         
-        
-        plot_dist(x,y)
-        
+    
         ood_name = "Tinyimagenet"
         resultss(x,y,ood_name)
         
