@@ -11,7 +11,7 @@ cross_entropy_loss = nn.CrossEntropyLoss(reduction="mean").to(device)
 soft_max = nn.Softmax(dim=1)
 
 
-def margin_loss(outputs, target, beta=0.15, m=0.4):
+def margin_loss(outputs, target, beta=0.5, m=0.4):
     id_outputs, ood_outputs = outputs
 
     ce_loss = 0

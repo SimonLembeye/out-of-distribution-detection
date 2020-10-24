@@ -4,8 +4,25 @@ import time
 
 
 class Cifar10Trainer(abcTrainer):
-    def __init__(self, dataloader, net, loss, optimizer, device, validation_frequency=1, max_epoch=100):
-        super().__init__(dataloader, net, loss, optimizer, device, validation_frequency=validation_frequency, max_epoch=max_epoch)
+    def __init__(
+        self,
+        dataloader,
+        net,
+        loss,
+        optimizer,
+        device,
+        validation_frequency=1,
+        max_epoch=100,
+    ):
+        super().__init__(
+            dataloader,
+            net,
+            loss,
+            optimizer,
+            device,
+            validation_frequency=validation_frequency,
+            max_epoch=max_epoch,
+        )
         self.train_loader, self.validation_loader = dataloader
 
     def train_epoch(self):
@@ -58,14 +75,18 @@ class Cifar10Trainer(abcTrainer):
             running_loss += loss.item()
 
             if i % 10 == 0:
-                print(f"step: {i} | running loss: {running_loss / running_id_images_counter} | running accuracy: {running_accuracy / running_id_images_counter} | training time: {time.time() - start}")
+                print(
+                    f"step: {i} | running loss: {running_loss / running_id_images_counter} | running accuracy: {running_accuracy / running_id_images_counter} | training time: {time.time() - start}"
+                )
                 running_loss = 0.0
                 running_accuracy = 0.0
                 running_id_images_counter = 0
 
         epoch_accuracy /= epoch_id_images_counter
 
-        print(f"epoch {self.epoch}: train_margin_loss: {epoch_loss} | train_accuracy (ids): {epoch_accuracy}")
+        print(
+            f"epoch {self.epoch}: train_margin_loss: {epoch_loss} | train_accuracy (ids): {epoch_accuracy}"
+        )
 
     def validate(self):
         self.net.eval()

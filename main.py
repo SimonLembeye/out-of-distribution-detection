@@ -12,6 +12,7 @@ from models.toy_net import ToyNet
 import torch.optim as optim
 
 from models.wide_res_net import WideResNet
+from models.wideresnet import WideResNetFb
 from trainers.cifar_trainer import Cifar10Trainer
 from torch.distributions import Categorical
 import torch.nn as nn
@@ -38,7 +39,9 @@ CLASSES = [
 
 # NET = ToyNet(class_nb=8).to(device)
 # NET = DenseNet(num_classes=8, depth=50).to(device)
-NET = WideResNet(8).to(device)
+# NET = WideResNet(8).to(device)
+NET = WideResNetFb(8).to(device)
+
 
 class Classifier:
     def __init__(self, train_name="toy_train", id=0, class_to_id={}):
@@ -70,7 +73,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=10, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=20, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -91,7 +94,7 @@ class Classifier:
 
         NET.train()
 
-        optimizer = optim.SGD(NET.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
+        optimizer = optim.SGD(NET.parameters(), lr=0.0001, momentum=0.9, weight_decay=0.0005)
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
             net=NET,
@@ -106,14 +109,14 @@ class Classifier:
 
 def validation(classifiers, dataset, w_label=False):
 
-    batch_size = 10
+    batch_size = 25
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=4
     )
 
     image_counter = 0
 
-    temperature = 10
+    temperature = 100
     epsilon = 0.002
 
     scores_0 = {
@@ -149,7 +152,7 @@ def validation(classifiers, dataset, w_label=False):
 
         for i, data in enumerate(loader, 0):
 
-            if i > 3:
+            if i > 24:
                 break
 
             images, labels = data
@@ -159,7 +162,7 @@ def validation(classifiers, dataset, w_label=False):
             out = NET(images)
 
             # Prediction and entropy with temperature scaling
-            f_x = soft_max(out * temperature)
+            f_x = soft_max(out / temperature)
             entropy = Categorical(probs=f_x).entropy()
 
             # Compute gradient over entropy loss step
@@ -169,7 +172,7 @@ def validation(classifiers, dataset, w_label=False):
 
             # Compute OOD scores
             out_ = NET(x_)
-            f_x_ = soft_max(out_ * temperature)
+            f_x_ = soft_max(out_ / temperature)
             entropy_ = Categorical(probs=f_x).entropy()
 
             ood_scores = (torch.max(f_x_) - entropy_)
@@ -287,22 +290,12 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="wide_train_102401", id=k
+            class_to_id=class_to_id_list[k], train_name="wide_fb_train_102401", id=k
         )
         for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
-
-        print()
-
-        for classifier in classifiers:
-            print()
-            print(f"## Train classifier {classifier.id}!")
-            trainer = classifier.get_and_update_current_trainer()
-
-            trainer.train()
-            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
         print()
         print("Validation CIFAR10")
@@ -324,6 +317,16 @@ if __name__ == "__main__":
             data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
         )
         validation(classifiers, tiny_dataset)
+
+        print()
+
+        for classifier in classifiers:
+            print()
+            print(f"## Train classifier {classifier.id}!")
+            trainer = classifier.get_and_update_current_trainer()
+
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
 
 

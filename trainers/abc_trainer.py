@@ -1,7 +1,17 @@
 from abc import ABC, abstractmethod
 
+
 class abcTrainer(ABC):
-    def __init__(self, dataloader, net, loss, optimizer, device, validation_frequency=1, max_epoch=100):
+    def __init__(
+        self,
+        dataloader,
+        net,
+        loss,
+        optimizer,
+        device,
+        validation_frequency=1,
+        max_epoch=100,
+    ):
         self.dataloader = dataloader
         self.net = net
         self.loss = loss
@@ -24,7 +34,7 @@ class abcTrainer(ABC):
                 self.validate()
                 print()
 
-        print(f'Train finished')
+        print(f"Train finished")
 
     @abstractmethod
     def train_epoch(self):
