@@ -31,8 +31,8 @@ CLASSES = [
     "truck",
 ]
 
-# NET = ToyNet(class_nb=8).to(device)
-NET = DenseNet(num_classes=8, depth=50).to(device)
+NET = ToyNet(class_nb=8).to(device)
+# NET = DenseNet(num_classes=8, depth=50).to(device)
 
 
 class Classifier:
@@ -224,12 +224,21 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="dense_train_1021202002", id=k
+            class_to_id=class_to_id_list[k], train_name="toy_train_1021202001", id=k
         )
         for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
+
+        print()
+
+        for classifier in classifiers:
+            print()
+            print(f"## Train classifier {classifier.id}!")
+            trainer = classifier.get_and_update_current_trainer()
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
         print("Validation CIFAR10")
         transform = transforms.Compose(
@@ -249,15 +258,6 @@ if __name__ == "__main__":
             data_dir=os.path.join("data", "tiny-imagenet-200", "mini_val", "images"),
         )
         validation(classifiers, tiny_dataset)
-
-        print()
-
-        for classifier in classifiers:
-            print()
-            print(f"## Train classifier {classifier.id}!")
-            trainer = classifier.get_and_update_current_trainer()
-            trainer.train()
-            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
 
 
