@@ -35,13 +35,19 @@ class BasicBlock(nn.Module):
     def forward(self, x):
         if not self.equalInOut:
             x = self.relu1(self.bn1(x))
+            out = self.conv1(x)
+
         else:
             out = self.relu1(self.bn1(x))
-        out = self.conv1(self.equalInOut and out or x)
+            out = self.conv1(out)
+
         if self.droprate > 0:
             out = F.dropout(out, p=self.droprate, training=self.training)
         out = self.conv2(self.relu2(self.bn2(out)))
-        return torch.add((not self.equalInOut) and self.convShortcut(x) or x, out)
+        if not self.equalInOut:
+            return torch.add(self.convShortcut(x), out)
+        else:
+            return torch.add(x, out)
 
 
 class NetworkBlock(nn.Module):
@@ -53,7 +59,7 @@ class NetworkBlock(nn.Module):
 
     def _make_layer(self, block, in_planes, out_planes, nb_layers, stride, dropRate):
         layers = []
-        for i in range(nb_layers):
+        for i in range(int(nb_layers)):
             layers.append(
                 block(
                     i == 0 and in_planes or out_planes,
