@@ -10,6 +10,8 @@ from loss import margin_loss
 from models.dense_net import DenseNet
 from models.toy_net import ToyNet
 import torch.optim as optim
+
+from models.wide_res_net import WideResNet
 from trainers.cifar_trainer import Cifar10Trainer
 from torch.distributions import Categorical
 import torch.nn as nn
@@ -34,9 +36,9 @@ CLASSES = [
     "truck",
 ]
 
-NET = ToyNet(class_nb=8).to(device)
+# NET = ToyNet(class_nb=8).to(device)
 # NET = DenseNet(num_classes=8, depth=50).to(device)
-
+NET = WideResNet(8).to(device)
 
 class Classifier:
     def __init__(self, train_name="toy_train", id=0, class_to_id={}):
@@ -68,7 +70,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=32, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=10, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -79,7 +81,7 @@ class Classifier:
         )
 
         self.validation_loader = torch.utils.data.DataLoader(
-            self.validation_dataset, batch_size=256, shuffle=True, num_workers=3
+            self.validation_dataset, batch_size=10, shuffle=True, num_workers=3
         )
 
     def get_and_update_current_trainer(self):
@@ -89,7 +91,7 @@ class Classifier:
 
         NET.train()
 
-        optimizer = optim.SGD(NET.parameters(), lr=0.000001, momentum=0.9)
+        optimizer = optim.SGD(NET.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
             net=NET,
@@ -104,14 +106,14 @@ class Classifier:
 
 def validation(classifiers, dataset, w_label=False):
 
-    batch_size = 3
+    batch_size = 10
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=4
     )
 
     image_counter = 0
 
-    temperature = 100
+    temperature = 10
     epsilon = 0.002
 
     scores_0 = {
@@ -205,6 +207,8 @@ def validation(classifiers, dataset, w_label=False):
         prediction_final_list[i] = max(running_score.items(), key=operator.itemgetter(1))[0]
 
     print("sum ood", sum(ood_scores_final_list))
+    print(prediction_final_list)
+    print(ood_scores_final_list)
 
     if w_label:
         id_to_class = {
@@ -289,6 +293,17 @@ if __name__ == "__main__":
     ]
 
     for _ in range(200):
+
+        print()
+
+        for classifier in classifiers:
+            print()
+            print(f"## Train classifier {classifier.id}!")
+            trainer = classifier.get_and_update_current_trainer()
+
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
+
         print()
         print("Validation CIFAR10")
         transform = transforms.Compose(
@@ -309,16 +324,6 @@ if __name__ == "__main__":
             data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
         )
         validation(classifiers, tiny_dataset)
-
-        print()
-
-        for classifier in classifiers:
-            print()
-            print(f"## Train classifier {classifier.id}!")
-            trainer = classifier.get_and_update_current_trainer()
-
-            trainer.train()
-            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
 
 

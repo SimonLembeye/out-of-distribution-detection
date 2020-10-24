@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # net = ToyNet(class_nb=10).to(device)
     net = WideResNet(10).to(device)
     criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
 
     trainer = ToyTrainer(dataloader=trainloader, net=net, loss=criterion, optimizer=optimizer, device=device)
     trainer.train()
