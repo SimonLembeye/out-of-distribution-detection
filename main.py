@@ -102,16 +102,16 @@ class Classifier:
         return trainer
 
 
-def validation(classifiers, dataset):
+def validation(classifiers, dataset, w_label=False):
 
-    batch_size = 25
+    batch_size = 3
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=4
     )
 
     image_counter = 0
 
-    temperature = 10
+    temperature = 100
     epsilon = 0.002
 
     scores_0 = {
@@ -129,6 +129,7 @@ def validation(classifiers, dataset):
 
     classifiers_scores_list = [[] for _ in range(len(classifiers))]
     classifiers_ood_scores_list = [[] for _ in range(len(classifiers))]
+    labels_list = []
 
     for j in range(len(classifiers)):
 
@@ -143,9 +144,10 @@ def validation(classifiers, dataset):
         scores_list = []
         ood_scores_list = []
 
+
         for i, data in enumerate(loader, 0):
 
-            if i > 5:
+            if i > 3:
                 break
 
             images, labels = data
@@ -178,8 +180,10 @@ def validation(classifiers, dataset):
 
                 scores_list.append(img_scores)
                 ood_scores_list.append(ood_scores[k].item())
-
                 image_counter += 1
+
+                if j == 0 and w_label:
+                    labels_list.append(labels.detach().cpu().numpy()[k])
 
         classifiers_scores_list[j] = scores_list
         classifiers_ood_scores_list[j] = ood_scores_list
@@ -187,6 +191,7 @@ def validation(classifiers, dataset):
     images_nb = len(classifiers_ood_scores_list[0])
     ood_scores_final_list = [0 for _ in range(images_nb)]
     prediction_final_list = ["" for _ in range(images_nb)]
+
     for i in range(images_nb):
 
         running_score = scores_0.copy()
@@ -195,13 +200,31 @@ def validation(classifiers, dataset):
             ood_scores_final_list[i] += classifiers_ood_scores_list[j][i]
 
             for c in scores_0.keys():
-                running_score[c] = classifiers_scores_list[j][i][c]
+                running_score[c] += classifiers_scores_list[j][i][c]
 
         prediction_final_list[i] = max(running_score.items(), key=operator.itemgetter(1))[0]
 
-    print(prediction_final_list)
-    print(ood_scores_final_list)
-    print(sum(ood_scores_final_list))
+    print("sum ood", sum(ood_scores_final_list))
+
+    if w_label:
+        id_to_class = {
+            0: "airplane",
+            1: "automobile",
+            2: "bird",
+            3: "cat",
+            4: "deer",
+            5: "dog",
+            6: "frog",
+            7: "horse",
+            8: "ship",
+            9: "truck",
+        }
+        acc = 0
+        for m in range(images_nb):
+            if id_to_class[labels_list[m]] == prediction_final_list[m]:
+                acc += 1
+
+        print("Accuracy: ", acc / images_nb)
 
 
 if __name__ == "__main__":
@@ -260,12 +283,13 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="toy_train_102401", id=k
+            class_to_id=class_to_id_list[k], train_name="toy_train_102402", id=k
         )
         for k in range(len(class_to_id_list))
     ]
 
     for _ in range(200):
+        print()
         print("Validation CIFAR10")
         transform = transforms.Compose(
             [
@@ -277,8 +301,9 @@ if __name__ == "__main__":
         cifar_dataset = torchvision.datasets.CIFAR10(
             root="./data", train=False, download=True, transform=transform
         )
-        validation(classifiers, cifar_dataset)
+        validation(classifiers, cifar_dataset, w_label=True)
 
+        print()
         print("Validation Tinyimagenet")
         tiny_dataset = TinyImagenetDataset(
             data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
