@@ -6,6 +6,7 @@ from torchvision.transforms import transforms
 
 from models.dense_net import DenseNet
 from models.toy_net import ToyNet
+from models.wide_res_net import WideResNet
 from trainers.toy_trainer import ToyTrainer
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -27,7 +28,8 @@ if __name__ == '__main__':
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
     # net = DenseNet(num_classes=10, depth=10).to(device)
-    net = ToyNet(class_nb=10).to(device)
+    # net = ToyNet(class_nb=10).to(device)
+    net = WideResNet(10).to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
