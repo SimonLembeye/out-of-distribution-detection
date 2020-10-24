@@ -62,17 +62,17 @@ def plot_dist(x,y):
     pyplot.show()
 
 
-def resultss(ood_sc_in, ood_sc_ood, ood_name, net_name = "DenseNet"):
+def resultss(ood_sc_in, ood_sc_ood, ood_dataName, net_name = "DenseNet"):
         
-        indis = "cifar-10"
+        ind_dataName = "cifar-10"
         tpr95=FPRat95TPR(ood_sc_in,ood_sc_ood)
         auroc_score=auroc(ood_sc_in,ood_sc_ood)
         
         #plot table
         print('Results')
         print("{:20}{:>13}".format("Net:", net_name))
-        print("{:20}{:>13}".format("ind data:", indis))
-        print("{:20}{:>13}".format("ood data:", ood_name))
+        print("{:20}{:>13}".format("ind data:", ind_dataName))
+        print("{:20}{:>13}".format("ood data:", ood_dataName))
         print("{:20}{:13.1f} ".format("FPR at TPR 95%:",tpr95*100))
         print("{:20}{:13.1f} ".format("auroc:",auroc_score*100))
         
