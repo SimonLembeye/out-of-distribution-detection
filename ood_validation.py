@@ -139,4 +139,4 @@ def validation(net, classifiers, dataset, w_label=False):
 
         print("Accuracy: ", acc / images_nb)
 
-        return ood_scores_final_list
+    return ood_scores_final_list

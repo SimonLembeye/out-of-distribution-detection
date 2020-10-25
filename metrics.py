@@ -2,6 +2,7 @@ import numpy as np
 
 # labels = 1 if id, 0 if ood
 
+
 def tfpn(labels, predictions):
     tp = 0
     fp = 0
@@ -11,36 +12,38 @@ def tfpn(labels, predictions):
         if predictions[i] == 1:
             if labels[i] == 1:
                 tp += 1
-            else : 
+            else:
                 fp += 1
-        else :
+        else:
             if labels[i] == 1:
                 fn += 1
-            else : 
+            else:
                 tn += 1
     return tp, fp, fn, tn
 
-def fpr95(labels, scores, precision = .5, num_samples = 10000):
+
+def fpr95(labels, scores, precision=0.5, num_samples=10000):
     max_score = np.max(scores)
     min_score = np.min(scores)
     samples = 0
     fpr = 0
-    for threshold in np.linspace(min_score, max_score, num_samples, endpoint = True):
-        predictions = (scores > threshold)
+    for threshold in np.linspace(min_score, max_score, num_samples, endpoint=True):
+        predictions = scores > threshold
         tp, fp, _, tn = tfpn(labels, predictions)
         tpr = tp / (tp + tn)
-        if abs(tpr - .95) < precision:
+        if abs(tpr - 0.95) < precision:
             samples += 1
             fpr = fp / (fp + tn)
-    return (fpr / samples)
+    return fpr / samples
 
-def auroc(labels, scores, num_samples = 10000):
+
+def auroc(labels, scores, num_samples=10000):
     max_score = np.max(scores)
     min_score = np.min(scores)
     high_fpr = 0
     area = 0
-    for threshold in np.linspace(max_score, min_score, num_samples, endpoint = True):
-        predictions = (scores > threshold)
+    for threshold in np.linspace(max_score, min_score, num_samples, endpoint=True):
+        predictions = scores > threshold
         tp, fp, fn, tn = tfpn(labels, predictions)
         tpr = tp / (tp + fn)
         low_fpr = high_fpr
@@ -49,15 +52,16 @@ def auroc(labels, scores, num_samples = 10000):
     area += (1 - high_fpr) * tpr
     return area
 
-def aupr_in(labels, scores, num_samples = 10000):
+
+def aupr_in(labels, scores, num_samples=10000):
     max_score = np.max(scores)
     min_score = np.min(scores)
     high_recall = 0
     area = 0
-    for threshold in np.linspace(max_score, min_score, num_samples, endpoint = True):
-        predictions = (scores > threshold)
+    for threshold in np.linspace(max_score, min_score, num_samples, endpoint=True):
+        predictions = scores > threshold
         tp, fp, fn, _ = tfpn(labels, predictions)
-        if tp != 0 :
+        if tp != 0:
             precision = tp / (tp + fp)
             low_recall = high_recall
             high_recall = tp / (tp + fn)
@@ -65,21 +69,22 @@ def aupr_in(labels, scores, num_samples = 10000):
     area += (1 - high_recall) * precision
     return area
 
-def aupr_out(labels, scores, num_samples = 10000):
+
+def aupr_out(labels, scores, num_samples=10000):
     scores = np.ones(len(scores)) - scores
     labels = np.ones(len(labels)) - labels
     return aupr_in(labels, scores, num_samples)
 
-def detection_error(labels, scores, num_samples = 10000):
+
+def detection_error(labels, scores, num_samples=10000):
     max_score = np.max(scores)
     min_score = np.min(scores)
     error = 1
-    for threshold in np.linspace(min_score, max_score, num_samples, endpoint = True):
-        predictions = (scores > threshold)
-        print(predictions)
+    for threshold in np.linspace(min_score, max_score, num_samples, endpoint=True):
+        predictions = scores > threshold
         tp, fp, fn, tn = tfpn(labels, predictions)
         tpr = tp / (tp + fn)
         fpr = fp / (fp + tn)
-        pe = .5 * (1 - tpr) + .5 * fpr
+        pe = 0.5 * (1 - tpr) + 0.5 * fpr
         error = min(error, pe)
     return error

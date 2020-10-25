@@ -1,44 +1,79 @@
+import numpy as np
 import torch
-import torch.optim as optim
 import os
 
-from datasets.cifar10 import Cifar10Dataset
-from loss import margin_loss
+from class_to_id_lists import cifar_10_class_to_id_list_5
+from classifier import Classifier
+from datasets.tiny_imagenet import TinyImagenetDataset
+from models.dense_net import DenseNet
 from models.toy_net import ToyNet
-from trainers.cifar_trainer import Cifar10Trainer
+from models.wide_res_net import WideResNet
+
+from models.wideresnet import WideResNetFb
+from ood_validation import validation
+import torch.nn as nn
+from torchvision.transforms import transforms
+import torchvision
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Using gpu: %s " % torch.cuda.is_available())
 
+soft_max = nn.Softmax(dim=0)
+
+NET = ToyNet(class_nb=8).to(device)
+# NET = DenseNet(num_classes=8, depth=50).to(device)
+# NET = WideResNet(8).to(device)
+# NET = WideResNetFb(8).to(device)
+
 if __name__ == "__main__":
-    train_dataset = Cifar10Dataset(
-        data_dir=os.path.join("data", "cifar-10", "train"),
-        id_class_list=["airplane", "automobile", "bird", "cat"],
-        ood_class_list=["truck", "ship"],
-    )
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=32, shuffle=True, num_workers=4
-    )
+    classifiers = [
+        Classifier(
+            NET, class_to_id=cifar_10_class_to_id_list_5[k], train_name="toy_train_102501", id=k
+        )
+        for k in range(len(cifar_10_class_to_id_list_5))
+    ]
 
-    validation_dataset = Cifar10Dataset(
-        data_dir=os.path.join("data", "cifar-10", "test"),
-        id_class_list=["airplane", "automobile", "bird", "cat"],
-        ood_class_list=["truck", "ship"],
-    )
+    for _ in range(200):
+        print()
+        for classifier in classifiers:
+            print()
+            print(f"## Train classifier {classifier.id}!")
+            trainer = classifier.get_and_update_current_trainer()
 
-    validation_loader = torch.utils.data.DataLoader(
-        validation_dataset, batch_size=32, shuffle=True, num_workers=4
-    )
+            trainer.train()
+            torch.save(trainer.net.state_dict(), classifier.best_weights_path)
 
-    net = ToyNet(class_nb=4).to(device)
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+        print()
+        print("Validation CIFAR10")
+        transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
+        )
 
-    trainer = Cifar10Trainer(
-        dataloader=[train_loader, validation_loader],
-        net=net,
-        loss=margin_loss,
-        optimizer=optimizer,
-        device=device,
-    )
-    trainer.train()
+        cifar_dataset = torchvision.datasets.CIFAR10(
+            root="./data", train=False, download=True, transform=transform
+        )
+        ood_scores_cifar = np.array(validation(NET, classifiers, cifar_dataset, w_label=True))
+
+        print()
+        print("Validation Tinyimagenet")
+        tiny_dataset = TinyImagenetDataset(
+            data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
+        )
+        ood_scores_tiny = np.array(validation(NET, classifiers, tiny_dataset))
+
+        labels = np.concatenate(np.ones_like(ood_scores_cifar), np.zeros_like(ood_scores_tiny))
+        print(labels)
+
+
+
+
+
+
+
+
+
+
