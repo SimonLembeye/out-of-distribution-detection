@@ -77,7 +77,7 @@ class Classifier:
 
         self.net.train()
 
-        optimizer = optim.SGD(self.net.parameters(), lr=0.1, momentum=0.9, weight_decay=0.0005)
+        optimizer = optim.SGD(self.net.parameters(), lr=0.05, momentum=0.9, weight_decay=0.005)
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
             net=self.net,

@@ -19,16 +19,16 @@ print("Using gpu: %s " % torch.cuda.is_available())
 
 soft_max = nn.Softmax(dim=0)
 
-NET = ToyNet(class_nb=8).to(device)
+# NET = ToyNet(class_nb=8).to(device)
 # NET = DenseNet(num_classes=8, depth=50).to(device)
-# NET = WideResNet(8).to(device)
+NET = WideResNet(8).to(device)
 # NET = WideResNetFb(8).to(device)
 
 if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            NET, class_to_id=cifar_10_class_to_id_list_5[k], train_name="toy_train_102503", id=k
+            NET, class_to_id=cifar_10_class_to_id_list_5[k], train_name="wide_train_102501", id=k
         )
         for k in range(len(cifar_10_class_to_id_list_5))
     ]
