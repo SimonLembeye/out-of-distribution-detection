@@ -83,10 +83,9 @@ class Cifar10Trainer(abcTrainer):
             for j in range(id_size):
                 outputs = self.net(id_images[j, :, :, :, :].to(self.device))
                 id_outputs.append(outputs)
-                id_labels[j] = id_labels[j].to(self.device)
 
                 pred = torch.argmax(outputs, dim=1)
-                acc = torch.sum(pred == id_labels[j]).item()
+                acc = torch.sum(pred == id_labels[j].to(self.device)).item()
                 epoch_accuracy += acc
                 running_accuracy += acc
                 epoch_id_images_counter += pred.size()[0]
