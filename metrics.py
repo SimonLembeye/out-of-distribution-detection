@@ -22,7 +22,7 @@ def tfpn(labels, predictions):
     return tp, fp, fn, tn
 
 
-def fpr95(labels, scores, precision=0.5, num_samples=10000):
+def fpr95(labels, scores, precision=0.0005, num_samples=10000):
     max_score = np.max(scores)
     min_score = np.min(scores)
     samples = 0
@@ -34,6 +34,8 @@ def fpr95(labels, scores, precision=0.5, num_samples=10000):
         if abs(tpr - 0.95) < precision:
             samples += 1
             fpr = fp / (fp + tn)
+    if samples == 0:
+        return fpr95(labels, scores, precision * 10)
     return fpr / samples
 
 
