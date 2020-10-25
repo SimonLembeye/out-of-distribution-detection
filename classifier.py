@@ -5,10 +5,6 @@ from torch import optim as optim
 
 from datasets.cifar10 import Cifar10Dataset
 from loss import margin_loss
-from models.dense_net import DenseNet
-from models.toy_net import ToyNet
-from models.wide_res_net import WideResNet
-from models.wideresnet import WideResNetFb
 from trainers.cifar_trainer import Cifar10Trainer
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

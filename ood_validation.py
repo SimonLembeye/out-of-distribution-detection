@@ -7,7 +7,7 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from classifier import Classifier
-from metrics import detection_error, fpr95, auroc
+from metrics import detection_error, fpr95, auroc, aupr_in, aupr_out
 from models.dense_net import DenseNet
 from models.toy_net import ToyNet
 from models.wide_res_net import WideResNet
@@ -198,3 +198,5 @@ def get_validation_metrics(
     print("detection_error", detection_error(labels, ood_scores))
     print("fpr95", fpr95(labels, ood_scores))
     print("auroc", auroc(labels, ood_scores))
+    print("aupr_in", aupr_in(labels, ood_scores))
+    print("aupr_out", aupr_out(labels, ood_scores))
