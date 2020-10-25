@@ -1,6 +1,9 @@
 import torch
+from torch.autograd import Variable
+
 from trainers.abc_trainer import abcTrainer
 import time
+import numpy as np
 
 
 class Cifar10Trainer(abcTrainer):
@@ -50,8 +53,38 @@ class Cifar10Trainer(abcTrainer):
             id_images = id_images.to(self.device)
             ood_images = ood_images.to(self.device)
 
-            for j in range(len(id_labels)):
-                outputs = self.net(id_images[:, j, :, :, :])
+            batch_size = id_labels[0].size()[0]
+            id_size = len(id_labels)
+            ood_size = len(ood_labels)
+
+            id_image_reshaped = torch.zeros(
+                batch_size * id_size,
+                id_images.size()[2],
+                id_images.size()[3],
+                id_images.size()[4],
+            )
+            id_labels_reshaped = torch.zeros(batch_size * id_size)
+            perm = np.random.permutation(batch_size * id_size)
+
+            for p in range(len(perm)):
+                id_index = perm[p] // batch_size
+                batch_index = perm[p] - id_index * batch_size
+
+                id_image_reshaped[p] = id_images[batch_index][id_index]
+                id_labels_reshaped[p] = id_labels[id_index][batch_index]
+
+            id_images = id_image_reshaped.view(
+                id_size,
+                batch_size,
+                id_images.size()[2],
+                id_images.size()[3],
+                id_images.size()[4],
+            )
+
+            id_labels = Variable(id_labels_reshaped.view(id_size, batch_size).long())
+
+            for j in range(id_size):
+                outputs = self.net(id_images[j, :, :, :, :])
                 id_outputs.append(outputs)
                 id_labels[j] = id_labels[j].to(self.device)
 
@@ -62,7 +95,30 @@ class Cifar10Trainer(abcTrainer):
                 epoch_id_images_counter += pred.size()[0]
                 running_id_images_counter += pred.size()[0]
 
-            for j in range(ood_images.size()[1]):
+
+            ood_image_reshaped = torch.zeros(
+                batch_size * ood_size,
+                ood_images.size()[2],
+                ood_images.size()[3],
+                ood_images.size()[4],
+            )
+            perm = np.random.permutation(batch_size * ood_size)
+
+            for p in range(len(perm)):
+                ood_index = perm[p] // batch_size
+                batch_index = perm[p] - ood_index * batch_size
+
+                ood_image_reshaped[p] = ood_images[batch_index][ood_index]
+
+            ood_images = ood_image_reshaped.view(
+                ood_size,
+                batch_size,
+                ood_images.size()[2],
+                ood_images.size()[3],
+                ood_images.size()[4],
+            )
+
+            for j in range(ood_size):
                 outputs = self.net(ood_images[:, j, :, :, :])
                 ood_outputs.append(outputs)
 
