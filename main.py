@@ -290,7 +290,7 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="wide_fb_train_102501", id=k
+            class_to_id=class_to_id_list[k], train_name="wide_fb_train_102502", id=k
         )
         for k in range(len(class_to_id_list))
     ]
