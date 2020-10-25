@@ -18,11 +18,13 @@ def margin_loss(outputs, target, beta=0.5, m=0.4):
     for j in range(len(id_outputs)):
         ce_loss += cross_entropy_loss(id_outputs[j], target[j])
 
+    ce_loss /= len(id_outputs)
+
     id_entropy = 0
     for j in range(len(id_outputs)):
         sm = soft_max(id_outputs[j])
         entropy = Categorical(probs=sm).entropy()
-        id_entropy += torch.sum(entropy)
+        id_entropy += (torch.sum(entropy) / entropy.size()[0])
 
     id_entropy /= len(id_outputs)
 
@@ -30,14 +32,15 @@ def margin_loss(outputs, target, beta=0.5, m=0.4):
     for j in range(len(ood_outputs)):
         sm = soft_max(ood_outputs[j])
         entropy = Categorical(probs=sm).entropy()
-        ood_entropy += torch.sum(entropy)
+        ood_entropy += (torch.sum(entropy) / entropy.size()[0])
 
-    ood_entropy /= len(id_outputs)
+    ood_entropy /= len(ood_outputs)
 
     m_loss = m + id_entropy - ood_entropy
 
     if m_loss > 0:
         return ce_loss + beta * m_loss
+
     return ce_loss
 
 

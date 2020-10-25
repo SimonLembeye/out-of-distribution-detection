@@ -1,6 +1,7 @@
 from trainers.abc_trainer import abcTrainer
 import torch
 
+
 class ToyTrainer(abcTrainer):
     def __init__(
         self,

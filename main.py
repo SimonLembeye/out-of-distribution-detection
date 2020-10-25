@@ -94,7 +94,7 @@ class Classifier:
 
         NET.train()
 
-        optimizer = optim.SGD(NET.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
+        optimizer = optim.SGD(NET.parameters(), lr=0.1, momentum=0.9, weight_decay=0.0005)
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
             net=NET,
@@ -290,7 +290,7 @@ if __name__ == "__main__":
 
     classifiers = [
         Classifier(
-            class_to_id=class_to_id_list[k], train_name="wide_fb_train_102402", id=k
+            class_to_id=class_to_id_list[k], train_name="wide_fb_train_102501", id=k
         )
         for k in range(len(class_to_id_list))
     ]

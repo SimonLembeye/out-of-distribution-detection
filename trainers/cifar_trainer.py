@@ -76,7 +76,9 @@ class Cifar10Trainer(abcTrainer):
 
             if i % 10 == 0:
                 print(
-                    f"step: {i} | running loss: {running_loss / running_id_images_counter} | running accuracy: {running_accuracy / running_id_images_counter} | training time: {time.time() - start}"
+                    f"step: {i} | running loss: {running_loss / running_id_images_counter} | "
+                    f"running accuracy: {running_accuracy / running_id_images_counter} | "
+                    f"training time: {time.time() - start}"
                 )
                 running_loss = 0.0
                 running_accuracy = 0.0
