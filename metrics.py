@@ -29,8 +29,8 @@ def fpr95(labels, scores, precision=0.0005, num_samples=10000):
     fpr = 0
     for threshold in np.linspace(min_score, max_score, num_samples, endpoint=True):
         predictions = scores > threshold
-        tp, fp, _, tn = tfpn(labels, predictions)
-        tpr = tp / (tp + tn)
+        tp, fp, fn, tn = tfpn(labels, predictions)
+        tpr = tp / (tp + fn)
         if abs(tpr - 0.95) < precision:
             samples += 1
             fpr = fp / (fp + tn)
