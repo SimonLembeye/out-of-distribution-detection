@@ -9,7 +9,10 @@ from class_to_id_lists import cifar_10_class_to_id_list_5
 from classifier import Classifier
 from datasets.tiny_imagenet import TinyImagenetDataset
 from metrics import detection_error, fpr95, auroc
+from models.dense_net import DenseNet
 from models.toy_net import ToyNet
+from models.wide_res_net import WideResNet
+from models.wideresnet import WideResNetFb
 from ood_validation import validation
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
