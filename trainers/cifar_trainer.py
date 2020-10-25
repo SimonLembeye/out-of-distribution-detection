@@ -50,9 +50,6 @@ class Cifar10Trainer(abcTrainer):
             id_outputs = []
             ood_outputs = []
 
-            id_images = id_images.to(self.device)
-            ood_images = ood_images.to(self.device)
-
             batch_size = id_labels[0].size()[0]
             id_size = len(id_labels)
             ood_size = len(ood_labels)
@@ -84,7 +81,7 @@ class Cifar10Trainer(abcTrainer):
             id_labels = Variable(id_labels_reshaped.view(id_size, batch_size).long())
 
             for j in range(id_size):
-                outputs = self.net(id_images[j, :, :, :, :])
+                outputs = self.net(id_images[j, :, :, :, :].to(self.device))
                 id_outputs.append(outputs)
                 id_labels[j] = id_labels[j].to(self.device)
 
@@ -119,7 +116,7 @@ class Cifar10Trainer(abcTrainer):
             )
 
             for j in range(ood_size):
-                outputs = self.net(ood_images[:, j, :, :, :])
+                outputs = self.net(ood_images[j, :, :, :, :].to(self.device))
                 ood_outputs.append(outputs)
 
             self.optimizer.zero_grad()
