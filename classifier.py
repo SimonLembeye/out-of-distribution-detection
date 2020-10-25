@@ -5,11 +5,13 @@ from torch import optim as optim
 
 from datasets.cifar10 import Cifar10Dataset
 from loss import margin_loss
+from models.dense_net import DenseNet
+from models.toy_net import ToyNet
+from models.wide_res_net import WideResNet
 from models.wideresnet import WideResNetFb
 from trainers.cifar_trainer import Cifar10Trainer
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("Using gpu: %s " % torch.cuda.is_available())
 
 CLASSES = [
     "airplane",
@@ -26,7 +28,17 @@ CLASSES = [
 
 
 class Classifier:
-    def __init__(self, net_architecture, train_name="toy_train", id=0, class_to_id={}):
+    def __init__(
+        self,
+        net_architecture,
+        train_name="toy_train",
+        id=0,
+        class_to_id={},
+        batch_size=20,
+        learning_rate=0.05,
+        momentum=0.9,
+        weight_decay=0.005,
+    ):
         self.net = net_architecture
         ood_list = []
         id_list = []
@@ -48,6 +60,10 @@ class Classifier:
             "train_models_weights", train_name, f"{id}.pth"
         )
 
+        self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
+        self.momentum = momentum
+
         self.train_dataset = Cifar10Dataset(
             data_dir=os.path.join("data", "cifar-10", "train"),
             id_class_list=id_list,
@@ -56,7 +72,7 @@ class Classifier:
         )
 
         self.train_loader = torch.utils.data.DataLoader(
-            self.train_dataset, batch_size=20, shuffle=True, num_workers=3
+            self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=3
         )
 
         self.validation_dataset = Cifar10Dataset(
@@ -67,7 +83,7 @@ class Classifier:
         )
 
         self.validation_loader = torch.utils.data.DataLoader(
-            self.validation_dataset, batch_size=10, shuffle=True, num_workers=3
+            self.validation_dataset, batch_size=batch_size, shuffle=True, num_workers=3
         )
 
     def get_and_update_current_trainer(self):
@@ -77,7 +93,12 @@ class Classifier:
 
         self.net.train()
 
-        optimizer = optim.SGD(self.net.parameters(), lr=0.05, momentum=0.9, weight_decay=0.005)
+        optimizer = optim.SGD(
+            self.net.parameters(),
+            lr=self.weight_decay,
+            momentum=self.momentum,
+            weight_decay=self.weight_decay,
+        )
         trainer = Cifar10Trainer(
             dataloader=[self.train_loader, self.validation_loader],
             net=self.net,

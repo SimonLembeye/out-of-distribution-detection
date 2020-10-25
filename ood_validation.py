@@ -1,32 +1,35 @@
 import operator
 import os
 
+import numpy as np
 import torch
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
+from classifier import Classifier
+from metrics import detection_error, fpr95, auroc
 from models.dense_net import DenseNet
 from models.toy_net import ToyNet
 from models.wide_res_net import WideResNet
-from models.wideresnet import WideResNetFb
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("Using gpu: %s " % torch.cuda.is_available())
 
 soft_max = torch.nn.Softmax(dim=0)
 
 
-def validation(net, classifiers, dataset, w_label=False):
+def compute_ood_scores(
+    classifiers,
+    dataset,
+    temperature=1,
+    epsilon=0,
+    batch_size=25,
+    num_epoch=25,
+    w_label=False,
+):
 
-    batch_size = 25
     loader = torch.utils.data.DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=4
     )
-
-    image_counter = 0
-
-    temperature = 100
-    epsilon = 0.002
 
     scores_0 = {
         "airplane": 0,
@@ -49,9 +52,9 @@ def validation(net, classifiers, dataset, w_label=False):
 
         clf = classifiers[j]
         if os.path.exists(clf.best_weights_path):
-            net.load_state_dict(torch.load(clf.best_weights_path))
+            clf.net.load_state_dict(torch.load(clf.best_weights_path))
 
-        net.eval()
+        clf.net.eval()
 
         image_counter = 0
 
@@ -60,14 +63,14 @@ def validation(net, classifiers, dataset, w_label=False):
 
         for i, data in enumerate(loader, 0):
 
-            if i > 24:
+            if i > num_epoch - 1:
                 break
 
             images, labels = data
             images = Variable(images.to(device), requires_grad=True)
 
-            net.zero_grad()
-            out = net(images)
+            clf.net.zero_grad()
+            out = clf.net(images)
 
             # Prediction and entropy with temperature scaling
             f_x = soft_max(out / temperature)
@@ -79,7 +82,7 @@ def validation(net, classifiers, dataset, w_label=False):
             x_ = images - epsilon * torch.sign(images.grad)
 
             # Compute OOD scores
-            out_ = net(x_)
+            out_ = clf.net(x_)
             f_x_ = soft_max(out_ / temperature)
             entropy_ = Categorical(probs=f_x).entropy()
 
@@ -140,3 +143,58 @@ def validation(net, classifiers, dataset, w_label=False):
         print("Accuracy: ", acc / images_nb)
 
     return ood_scores_final_list
+
+
+def get_validation_metrics(
+    id_dataset,
+    ood_dataset,
+    net_architecture="ToyNet",
+    train_name="toy_train_102501",
+    class_to_id_list=[],
+    temperature=1,
+    epsilon=0,
+    batch_size=25,
+    num_epoch=25,
+):
+    if net_architecture == "DenseNet":
+        net = DenseNet(num_classes=8, depth=50).to(device)
+    elif net_architecture == "WideResNet":
+        net = WideResNet(8).to(device)
+    else:
+        net = ToyNet(class_nb=8).to(device)
+
+    classifiers = [
+        Classifier(net, class_to_id=class_to_id_list[k], train_name=train_name, id=k)
+        for k in range(len(class_to_id_list))
+    ]
+
+    ood_scores_id_data = np.array(
+        compute_ood_scores(
+            classifiers,
+            id_dataset,
+            temperature=temperature,
+            epsilon=epsilon,
+            batch_size=batch_size,
+            num_epoch=num_epoch,
+            w_label=True,
+        )
+    )
+    ood_scores_ood_data = np.array(
+        compute_ood_scores(
+            classifiers,
+            ood_dataset,
+            temperature=temperature,
+            epsilon=epsilon,
+            batch_size=batch_size,
+            num_epoch=num_epoch,
+        )
+    )
+
+    labels = np.concatenate(
+        (np.ones_like(ood_scores_id_data), np.zeros_like(ood_scores_ood_data)), axis=0
+    )
+    ood_scores = np.concatenate((ood_scores_id_data, ood_scores_ood_data), axis=0)
+
+    print("detection_error", detection_error(labels, ood_scores))
+    print("fpr95", fpr95(labels, ood_scores))
+    print("auroc", auroc(labels, ood_scores))

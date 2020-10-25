@@ -3,7 +3,6 @@ from torch.distributions import Categorical
 import torch.nn as nn
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print('Using gpu: %s ' % torch.cuda.is_available())
 
 # cross_entropy_loss averaged: see https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html#torch.nn.CrossEntropyLoss
 cross_entropy_loss = nn.CrossEntropyLoss(reduction="mean").to(device)
