@@ -28,6 +28,7 @@ if __name__ == "__main__":
     learning_rate = 0.05
     weight_decay = 0.005
     momentum = 0.9
+    batch_size = 20
 
     if net_architecture == "DenseNet":
         net = DenseNet(num_classes=8, depth=50).to(device)
@@ -42,6 +43,7 @@ if __name__ == "__main__":
             class_to_id=class_to_id_list[k],
             train_name=train_name,
             id=k,
+            batch_size=batch_size,
             learning_rate=learning_rate,
             momentum=momentum,
             weight_decay=weight_decay,
