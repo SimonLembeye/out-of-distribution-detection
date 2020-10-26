@@ -31,7 +31,7 @@ if __name__ == "__main__":
     batch_size = 20
 
     if net_architecture == "DenseNet":
-        net = DenseNet(num_classes=8, depth=50).to(device)
+        net = DenseNet(num_classes=8, depth=100).to(device)
     elif net_architecture == "WideResNet":
         net = WideResNet(8).to(device)
     else:
