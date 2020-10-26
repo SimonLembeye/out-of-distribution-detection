@@ -13,8 +13,8 @@ print("Using gpu: %s " % torch.cuda.is_available())
 soft_max = torch.nn.Softmax(dim=0)
 
 if __name__ == "__main__":
-    net_architecture = "ToyNet"
-    train_name = "toy_train_102501"
+    net_architecture = "WideResNet"
+    train_name = "wide_train_102501"
     class_to_id_list = cifar_10_class_to_id_list_5
 
     temperature = 100
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     )
 
     ood_dataset = OodDataset(
-        data_dir=os.path.join("data", "image-net-resized", "Imagenet_resize"), image_extension="jpg"
+        data_dir=os.path.join("data", "Imagenet", "test"), image_extension="png"
     )
 
     get_validation_metrics(

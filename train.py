@@ -21,14 +21,14 @@ soft_max = nn.Softmax(dim=0)
 
 if __name__ == "__main__":
 
-    net_architecture = "ToyNet"
+    net_architecture = "WideResNet"
     class_to_id_list = cifar_10_class_to_id_list_5
-    train_name = "toy_train_102501"
+    train_name = "wide_train_102501"
 
     learning_rate = 0.05
-    weight_decay = 0.005
+    weight_decay = 0.0005
     momentum = 0.9
-    batch_size = 20
+    batch_size = 25
 
     if net_architecture == "DenseNet":
         net = DenseNet(num_classes=8, depth=50).to(device)
