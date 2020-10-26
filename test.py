@@ -55,7 +55,7 @@ if __name__ == "__main__":
     temperatures = [100, 1000]
     epsilons = [0, 0.002]
     batch_size = 25
-    num_epoch_validation = 1
+    num_epoch_validation = 200
 
     ood_datasets = [
         OodDataset(
