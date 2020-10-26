@@ -33,7 +33,7 @@ def fpr95(labels, scores, precision=0.0005, num_samples=10000):
         tpr = tp / (tp + fn)
         if abs(tpr - 0.95) < precision:
             samples += 1
-            fpr = fp / (fp + tn)
+            fpr += fp / (fp + tn)
     if samples == 0:
         return fpr95(labels, scores, precision * 10)
     return fpr / samples
@@ -90,3 +90,60 @@ def detection_error(labels, scores, num_samples=10000):
         pe = 0.5 * (1 - tpr) + 0.5 * fpr
         error = min(error, pe)
     return error
+
+def get_metrics(labels, scores, num_thresholds = 10000):
+    max_score = np.max(scores)
+    min_score = np.min(scores)
+
+    tpr_samples = 0
+    backup_tpr_samples = 0
+    fpr_95 = 0
+    backup_fpr_95 = 0
+
+    high_fpr = 0
+    auroc = 0
+
+    high_recall = 0
+    auprin = 0
+
+    error = 1
+
+    for threshold in np.linspace(max_score, min_score, num_thresholds, endpoint=True):
+        predictions = scores > threshold
+        tp, fp, fn, tn = tfpn(labels, predictions)
+        tpr = tp / (tp + fn)
+        fpr = fp / (fp + tn)
+
+        if abs(tpr - 0.95) < .0005:
+            tpr_samples += 1
+            fpr_95 += fpr
+
+        if abs(tpr - 0.95) < .005:
+            backup_tpr_samples += 1
+            backup_fpr_95 += fpr
+
+        low_fpr = high_fpr
+        high_fpr = fpr
+        auroc += tpr * (high_fpr - low_fpr)
+
+        if tp != 0:
+            precision = tp / (tp + fp)
+            low_recall = high_recall
+            high_recall = tp / (tp + fn)
+            auprin += precision * (high_recall - low_recall)
+    
+        pe = 0.5 * (1 - tpr) + 0.5 * fpr
+        error = min(error, pe)
+
+    if tpr_samples == 0:
+        fpr_95 = backup_fpr_95 / backup_tpr_samples
+    else :
+        fpr_95 = fpr_95 / tpr_samples
+
+    auroc += (1 - high_fpr) * tpr
+
+    auprin += (1 - high_recall) * precision
+
+    auprout = aupr_out(labels, scores, num_thresholds)
+
+    return fpr_95, auroc, auprin, auprout, error
