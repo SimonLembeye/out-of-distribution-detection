@@ -12,5 +12,5 @@ realised within the course [DD2412 Deep Learning, Advanced](https://www.kth.se/s
 * [LSUN (resize)](https://www.dropbox.com/s/moqh2wh8696c3yl/LSUN_resize.tar.gz) (provided by [fb-research](https://github.com/facebookresearch/odin))
 * [iSUN](https://www.dropbox.com/s/ssz7qxfqae0cca5/iSUN.tar.gz) (provided by [fb-research](https://github.com/facebookresearch/odin))
 
-Uniform Noise (UNFM) and Gaussian Noise (GSSN) can be generated thanks to the script noise_ood_datasets_generator.py
+Uniform Noise (UNFM) and Gaussian Noise (GSSN) can be generated thanks to the script ```noise_ood_datasets_generator.py```
 
