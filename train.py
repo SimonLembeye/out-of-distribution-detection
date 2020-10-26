@@ -3,7 +3,7 @@ import os
 
 from class_to_id_lists import cifar_10_class_to_id_list_5
 from classifier import Classifier
-from datasets.tiny_imagenet import TinyImagenetDataset
+from datasets.ood import OodDataset
 from models.dense_net import DenseNet
 from models.toy_net import ToyNet
 from models.wide_res_net import WideResNet
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             root="./data", train=False, download=True, transform=transform
         )
 
-        tiny_dataset = TinyImagenetDataset(
+        tiny_dataset = OodDataset(
             data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
         )
 

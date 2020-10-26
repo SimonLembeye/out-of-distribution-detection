@@ -4,7 +4,7 @@ import torchvision
 from torchvision.transforms import transforms
 
 from class_to_id_lists import cifar_10_class_to_id_list_5
-from datasets.tiny_imagenet import TinyImagenetDataset
+from datasets.ood import OodDataset
 from ood_validation import get_validation_metrics
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -33,13 +33,13 @@ if __name__ == "__main__":
         root="./data", train=False, download=True, transform=transform
     )
 
-    tiny_dataset = TinyImagenetDataset(
-        data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
+    ood_dataset = OodDataset(
+        data_dir=os.path.join("data", "image-net-resized", "Imagenet_resize"), image_extension="jpg"
     )
 
     get_validation_metrics(
         cifar_dataset,
-        tiny_dataset,
+        ood_dataset,
         net_architecture=net_architecture,
         train_name=train_name,
         class_to_id_list=class_to_id_list,
