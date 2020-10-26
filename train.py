@@ -73,7 +73,7 @@ if __name__ == "__main__":
         )
 
         ood_dataset = OodDataset(
-            data_dir=os.path.join("data", "iSUN", "iSUN_patches"),
+            data_dir=os.path.join("data", "iSUN", "iSUN_patches"), image_extension="jpeg"
         )
 
         get_validation_metrics(
