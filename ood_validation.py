@@ -1,6 +1,7 @@
 import operator
 import os
 
+from matplotlib import pyplot as plt
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -163,6 +164,8 @@ def get_validation_metrics(
     else:
         net = ToyNet(class_nb=8).to(device)
 
+    print(ood_dataset.name)
+
     classifiers = [
         Classifier(net, class_to_id=class_to_id_list[k], train_name=train_name, id=k)
         for k in range(len(class_to_id_list))
@@ -189,6 +192,13 @@ def get_validation_metrics(
             num_epoch=num_epoch,
         )
     )
+
+    plt.figure()
+    bins = np.linspace(min(np.min(ood_scores_id_data), np.min(ood_scores_ood_data)), max(np.max(ood_scores_id_data), np.max(ood_scores_ood_data)), 100)
+    plt.hist(ood_scores_id_data, bins, alpha=0.5, label='id')
+    plt.hist(ood_scores_ood_data, bins, alpha=0.5, label='ood')
+    plt.legend(loc='upper right')
+    plt.savefig(os.path.join("distributions", f"{train_name}_{ood_dataset.name}_{temperature}_{epsilon}.jpg"))
 
     labels = np.concatenate(
         (np.ones_like(ood_scores_id_data), np.zeros_like(ood_scores_ood_data)), axis=0

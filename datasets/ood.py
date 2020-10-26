@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 
 class OodDataset(Dataset):
     def __init__(self, data_dir, image_extension="jpg", transform=None):
+        self.name = data_dir.split("/")[1]
         self.data_dir = data_dir
         self.image_extension = image_extension
         if transform:
