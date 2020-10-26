@@ -72,13 +72,13 @@ if __name__ == "__main__":
             root="./data", train=False, download=True, transform=transform
         )
 
-        tiny_dataset = OodDataset(
-            data_dir=os.path.join("data", "tiny-imagenet-200", "val", "images"),
+        ood_dataset = OodDataset(
+            data_dir=os.path.join("data", "iSUN", "iSUN_patches"),
         )
 
         get_validation_metrics(
             cifar_dataset,
-            tiny_dataset,
+            ood_dataset,
             net_architecture=net_architecture,
             train_name=train_name,
             class_to_id_list=class_to_id_list,
