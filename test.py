@@ -52,10 +52,42 @@ if __name__ == "__main__":
     train_name = "toy_train_102501"
     class_to_id_list = cifar_10_class_to_id_list_5
 
-    temperatures = [1, 10, 100, 1000]
+    temperatures = [100, 1000]
     epsilons = [0, 0.002]
     batch_size = 25
-    num_epoch_validation = 4
+    num_epoch_validation = 1
+
+    ood_datasets = [
+        OodDataset(
+            data_dir=os.path.join("data", "Imagenet_resize", "Imagenet_resize"), image_extension="jpg"
+        ),
+        OodDataset(
+            data_dir=os.path.join("data", "LSUN_resize", "LSUN_resize"), image_extension="jpg"
+        ),
+        OodDataset(
+            data_dir=os.path.join("data","gaussian_noise"), image_extension="jpg"
+        ),
+        OodDataset(
+            data_dir=os.path.join("data", "uniform_noise"), image_extension="jpg"
+        ),
+    ]
+
+    for ood_dataset in ood_datasets:
+        test_basic(
+            ood_dataset,
+            net_architecture=net_architecture,
+            train_name=train_name,
+            class_to_id_list=cifar_10_class_to_id_list_5,
+            temperature=100,
+            epsilon=0.002,
+            batch_size=batch_size,
+            num_epoch_validation=num_epoch_validation,
+        )
+
+
+    print()
+    print("## Params valdation ...")
+    print()
 
     ood_dataset = OodDataset(
         data_dir=os.path.join("data", "iSUN", "iSUN_patches"), image_extension="jpeg"
