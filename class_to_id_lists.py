@@ -1,5 +1,5 @@
 def build_cifar_10_class_to_id_list_10():
-    classes = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truc"]
+    classes = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
     cifar_10_class_to_id_list_10 = []
     for i in range(len(classes)):
         dict = {}
