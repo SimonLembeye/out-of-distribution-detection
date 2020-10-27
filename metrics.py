@@ -91,8 +91,7 @@ def detection_error(labels, scores, num_samples=10000):
         error = min(error, pe)
     return error
 
-
-def get_metrics(labels, scores, num_thresholds=10000):
+def get_metrics(labels, scores, num_thresholds = 10000):
     max_score = np.max(scores)
     min_score = np.min(scores)
 
@@ -115,11 +114,11 @@ def get_metrics(labels, scores, num_thresholds=10000):
         tpr = tp / (tp + fn)
         fpr = fp / (fp + tn)
 
-        if abs(tpr - 0.95) < 0.0005:
+        if abs(tpr - 0.95) < .005:
             tpr_samples += 1
             fpr_95 += fpr
 
-        if abs(tpr - 0.95) < 0.005:
+        if abs(tpr - 0.95) < .05:
             backup_tpr_samples += 1
             backup_fpr_95 += fpr
 
@@ -132,14 +131,16 @@ def get_metrics(labels, scores, num_thresholds=10000):
             low_recall = high_recall
             high_recall = tp / (tp + fn)
             auprin += precision * (high_recall - low_recall)
-
+    
         pe = 0.5 * (1 - tpr) + 0.5 * fpr
         error = min(error, pe)
 
     if tpr_samples == 0:
-        fpr_95 = "Problem"
-        # fpr_95 = backup_fpr_95 / backup_tpr_samples
-    else:
+        if backup_tpr_samples == 0 :
+            fpr_95 = 0
+        else :
+            fpr_95 = backup_fpr_95 / backup_tpr_samples
+    else :
         fpr_95 = fpr_95 / tpr_samples
 
     auroc += (1 - high_fpr) * tpr
