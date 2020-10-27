@@ -28,7 +28,7 @@ class OodDataset(Dataset):
             idx = idx.tolist()
 
         image_path = os.path.join(self.data_dir, f"{idx}.{self.image_extension}")
-        image = cv2.resize(cv2.imread(image_path), (32, 32))
+        image = cv2.imread(image_path)
         image = self.transform(image)
 
         return image, "label" # read label in txt file if needed
