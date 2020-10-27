@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from classifier import Classifier
-from metrics import detection_error, fpr95, auroc, aupr_in, aupr_out
+from metrics import get_metrics
 from models.dense_net import DenseNet
 from models.toy_net import ToyNet
 from models.wide_res_net import WideResNet
@@ -89,8 +89,9 @@ def compute_ood_scores(
 
             ood_scores = torch.max(f_x_) - entropy_
 
+            sm_out = soft_max(out)
             for k in range(len(out)):
-                res = out[k]
+                res = sm_out[k]
                 img_scores = scores_0.copy()
                 for p in range(len(res)):
                     img_scores[clf.id_to_class[p]] += res[p].item()
@@ -164,7 +165,6 @@ def get_validation_metrics(
     else:
         net = ToyNet(class_nb=8).to(device)
 
-    print()
     print(ood_dataset.name)
 
     classifiers = [
@@ -195,19 +195,30 @@ def get_validation_metrics(
     )
 
     plt.figure()
-    bins = np.linspace(min(np.min(ood_scores_id_data), np.min(ood_scores_ood_data)), max(np.max(ood_scores_id_data), np.max(ood_scores_ood_data)), 100)
-    plt.hist(ood_scores_id_data, bins, alpha=0.5, label='id')
-    plt.hist(ood_scores_ood_data, bins, alpha=0.5, label='ood')
-    plt.legend(loc='upper right')
-    plt.savefig(os.path.join("distributions", f"{train_name}_{ood_dataset.name}_{temperature}_{epsilon}.jpg"))
+    bins = np.linspace(
+        min(np.min(ood_scores_id_data), np.min(ood_scores_ood_data)),
+        max(np.max(ood_scores_id_data), np.max(ood_scores_ood_data)),
+        100,
+    )
+    plt.hist(ood_scores_id_data, bins, alpha=0.5, label="id")
+    plt.hist(ood_scores_ood_data, bins, alpha=0.5, label="ood")
+    plt.legend(loc="upper right")
+    plt.savefig(
+        os.path.join(
+            "distributions",
+            f"{train_name}_{ood_dataset.name}_{temperature}_{epsilon}.jpg",
+        )
+    )
 
     labels = np.concatenate(
         (np.ones_like(ood_scores_id_data), np.zeros_like(ood_scores_ood_data)), axis=0
     )
     ood_scores = np.concatenate((ood_scores_id_data, ood_scores_ood_data), axis=0)
 
-    print("detection_error", detection_error(labels, ood_scores))
-    print("fpr95", fpr95(labels, ood_scores))
-    print("auroc", auroc(labels, ood_scores))
-    print("aupr_in", aupr_in(labels, ood_scores))
-    print("aupr_out", aupr_out(labels, ood_scores))
+    fpr95, auroc, aupr_in, aupr_out, error = get_metrics(labels, ood_scores)
+
+    print("detection_error", error)
+    print("fpr95", fpr95)
+    print("auroc", auroc)
+    print("aupr_in", aupr_in)
+    print("aupr_out", aupr_out)

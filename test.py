@@ -21,7 +21,9 @@ def test_basic(
     batch_size=25,
     num_epoch_validation=4,
 ):
-    print(f"{net_architecture} | {train_name} | temperature: {temperature} | epsilon: {epsilon} | batch_size: {batch_size} | num_epoch: {num_epoch_validation}")
+    print(
+        f"{net_architecture} | {train_name} | temperature: {temperature} | epsilon: {epsilon} | batch_size: {batch_size} | num_epoch: {num_epoch_validation}"
+    )
 
     transform = transforms.Compose(
         [
@@ -48,8 +50,8 @@ def test_basic(
 
 
 if __name__ == "__main__":
-    net_architecture = "ToyNet"
-    train_name = "toy_train_102501"
+    net_architecture = "WideResNet"
+    train_name = "wide_train_102501"
     class_to_id_list = cifar_10_class_to_id_list_5
 
     temperatures = [1, 10, 100, 1000]
@@ -59,10 +61,12 @@ if __name__ == "__main__":
 
     ood_datasets = [
         OodDataset(
-            data_dir=os.path.join("data", "Imagenet_resize", "Imagenet_resize"), image_extension="jpg"
+            data_dir=os.path.join("data", "Imagenet_resize", "Imagenet_resize"),
+            image_extension="jpg",
         ),
         OodDataset(
-            data_dir=os.path.join("data", "LSUN_resize", "LSUN_resize"), image_extension="jpg"
+            data_dir=os.path.join("data", "LSUN_resize", "LSUN_resize"),
+            image_extension="jpg",
         ),
         OodDataset(
             data_dir=os.path.join("data", "gaussian_noise"), image_extension="jpg"
@@ -83,7 +87,6 @@ if __name__ == "__main__":
             batch_size=batch_size,
             num_epoch_validation=num_epoch_validation,
         )
-
 
     print()
     print("## Params valdation ...")
