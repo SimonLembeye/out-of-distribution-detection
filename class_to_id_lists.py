@@ -1,3 +1,7 @@
+def build_cifar_10_class_to_id_list_10():
+    classes = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truc"]
+    print("Yes")
+
 cifar_10_class_to_id_list_5 = [
     {
         "airplane": 0,

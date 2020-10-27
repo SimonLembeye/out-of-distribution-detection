@@ -137,7 +137,8 @@ def get_metrics(labels, scores, num_thresholds=10000):
         error = min(error, pe)
 
     if tpr_samples == 0:
-        fpr_95 = backup_fpr_95 / backup_tpr_samples
+        fpr_95 = "Problem"
+        # fpr_95 = backup_fpr_95 / backup_tpr_samples
     else:
         fpr_95 = fpr_95 / tpr_samples
 

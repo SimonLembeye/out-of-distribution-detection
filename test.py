@@ -50,14 +50,31 @@ def test_basic(
 
 
 if __name__ == "__main__":
-    net_architecture = "WideResNet"
-    train_name = "wide_train_102501"
+    net_architecture = "ToyNet"
+    train_name = "toy_train_102501"
     class_to_id_list = cifar_10_class_to_id_list_5
 
     temperatures = [1, 10, 100, 1000]
     epsilons = [0, 0.002]
-    batch_size = 25
+    batch_size = 30
     num_epoch_validation = 100
+
+    """
+    ood_dataset = OodDataset(
+    data_dir=os.path.join("data", "iSUN", "iSUN_patches"), image_extension="jpeg"
+    )
+
+    test_basic(
+        ood_dataset,
+        net_architecture=net_architecture,
+        train_name=train_name,
+        class_to_id_list=cifar_10_class_to_id_list_5,
+        temperature=100,
+        epsilon=0.002,
+        batch_size=batch_size,
+        num_epoch_validation=num_epoch_validation,
+    )
+    """
 
     ood_datasets = [
         OodDataset(

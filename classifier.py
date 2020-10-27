@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import torch
 from torch import optim as optim
@@ -52,9 +53,9 @@ class Classifier:
 
         self.id = id
         self.train_name = train_name
-        self.best_weights_path = os.path.join(
+        self.best_weights_path = os.path.join(pathlib.Path(__file__).parent.absolute(), os.path.join(
             "train_models_weights", train_name, f"{id}.pth"
-        )
+        ))
 
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay

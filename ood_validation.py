@@ -1,11 +1,13 @@
 import operator
 import os
+from pathlib import Path
 
 from matplotlib import pyplot as plt
 import numpy as np
 import torch
 from torch.autograd import Variable
 from torch.distributions import Categorical
+from torch.utils.data.dataloader import DataLoader
 
 from classifier import Classifier
 from metrics import get_metrics
@@ -28,7 +30,7 @@ def compute_ood_scores(
     w_label=False,
 ):
 
-    loader = torch.utils.data.DataLoader(
+    loader = DataLoader(
         dataset, batch_size=batch_size, shuffle=False, num_workers=4
     )
 
@@ -64,7 +66,7 @@ def compute_ood_scores(
 
         for i, data in enumerate(loader, 0):
 
-            if i > num_epoch - 1:
+            if i > num_epoch:
                 break
 
             images, labels = data
@@ -89,9 +91,8 @@ def compute_ood_scores(
 
             ood_scores = torch.max(f_x_) - entropy_
 
-            sm_out = soft_max(out)
             for k in range(len(out)):
-                res = sm_out[k]
+                res = out[k]
                 img_scores = scores_0.copy()
                 for p in range(len(res)):
                     img_scores[clf.id_to_class[p]] += res[p].item()
@@ -111,7 +112,6 @@ def compute_ood_scores(
     prediction_final_list = ["" for _ in range(images_nb)]
 
     for i in range(images_nb):
-
         running_score = scores_0.copy()
 
         for j in range(len(classifiers)):
@@ -161,7 +161,7 @@ def get_validation_metrics(
     if net_architecture == "DenseNet":
         net = DenseNet(num_classes=8, depth=50).to(device)
     elif net_architecture == "WideResNet":
-        net = WideResNet(8).to(device)
+        net = WideResNet(8, dropout=0).to(device)
     else:
         net = ToyNet(class_nb=8).to(device)
 
