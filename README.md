@@ -47,3 +47,5 @@ Validation is executed on iSUN with T=100, epsilon=0.002.
 
 Test: execute ```test.py```, net_architecture and training_name have to be consistent.  
 The results have been obtained by executing this file as is.
+
+Project made by Simon Lembeye, Emile Lucas and Muhammed Memedi.
