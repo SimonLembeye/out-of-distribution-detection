@@ -14,3 +14,36 @@ realised within the course [DD2412 Deep Learning, Advanced](https://www.kth.se/s
 
 Uniform Noise (UNFM) and Gaussian Noise (GSSN) can be generated thanks to the script ```noise_ood_datasets_generator.py```
 
+## Project structure
+
+The project is structured as following:
+
+```code
+.
+├── data # data should be upload here
+├── datasets
+|   └──  cifar10.py # a custom dataset design to handle margin_loss with cifar10
+|   └──  ood.py # basic custom dataset for ood data
+├── distributions # has to be created, distribution plots (id vs ood) will be saved here
+├── models
+|   └──  dense_net.py # densenet nn
+|   └──  toy_net.py # a basic cnn taken from the pytorch cifar10 tutorial
+|   └──  wide_res_net.py # wideresnet nn
+├── distributions # has to be created, models weights will be saved here
+├── class_to_id_lists.py
+├── classifier.py # definition of the Classifier class
+├── loss.py # entropy based margin loss
+├── metrics.py # detection error, fpr95, auroc, aupr in, aupr out
+├── noise_ood_datasets_generator.py # has to be run to generate uniform noise and gaussian noise datasets
+├── ood_validation.py # ood scores computation
+├── train.py # pipelines for training
+├── test.y # pipelines for testing
+```
+
+## Launching
+
+Train: execute ```train.py```, parameters have to be chosen into the file 
+Validation is executed on iSUN with T=100, epsilon=0.002.
+
+Test: execute ```test.py```, net_architecture and training_name have to be consistent
+The results have been obtained by executing this file as is.
