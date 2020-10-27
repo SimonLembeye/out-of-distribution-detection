@@ -164,6 +164,7 @@ def get_validation_metrics(
     else:
         net = ToyNet(class_nb=8).to(device)
 
+    print()
     print(ood_dataset.name)
 
     classifiers = [
