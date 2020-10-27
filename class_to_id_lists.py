@@ -1,6 +1,19 @@
 def build_cifar_10_class_to_id_list_10():
     classes = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truc"]
-    print("Yes")
+    cifar_10_class_to_id_list_10 = []
+    for i in range(len(classes)):
+        dict = {}
+        p = 0
+        for j in range(len(classes)):
+            if i != j:
+                dict[classes[j]] = p
+                p += 1
+
+        cifar_10_class_to_id_list_10.append(dict)
+
+    return cifar_10_class_to_id_list_10
+
+
 
 cifar_10_class_to_id_list_5 = [
     {

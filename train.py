@@ -1,7 +1,7 @@
 import torch
 import os
 
-from class_to_id_lists import cifar_10_class_to_id_list_5
+from class_to_id_lists import cifar_10_class_to_id_list_5, build_cifar_10_class_to_id_list_10
 from classifier import Classifier
 from datasets.ood import OodDataset
 from models.dense_net import DenseNet
@@ -22,8 +22,11 @@ soft_max = nn.Softmax(dim=0)
 if __name__ == "__main__":
 
     net_architecture = "WideResNet"
-    class_to_id_list = cifar_10_class_to_id_list_5
-    train_name = "wide_train_102501"
+    # class_to_id_list = cifar_10_class_to_id_list_5
+    class_to_id_list = build_cifar_10_class_to_id_list_10()
+    print(class_to_id_list)
+    train_name = "wide_train_102701"
+    num_classes = 9
 
     learning_rate = 0.05
     weight_decay = 0.0005
@@ -31,11 +34,11 @@ if __name__ == "__main__":
     batch_size = 25
 
     if net_architecture == "DenseNet":
-        net = DenseNet(num_classes=8, depth=100).to(device)
+        net = DenseNet(num_classes=num_classes, depth=100).to(device)
     elif net_architecture == "WideResNet":
-        net = WideResNet(8).to(device)
+        net = WideResNet(num_classes).to(device)
     else:
-        net = ToyNet(class_nb=8).to(device)
+        net = ToyNet(class_nb=num_classes).to(device)
 
     classifiers = [
         Classifier(
@@ -87,4 +90,5 @@ if __name__ == "__main__":
             epsilon=0.002,
             batch_size=25,
             num_epoch=25,
+            num_classes=9
         )

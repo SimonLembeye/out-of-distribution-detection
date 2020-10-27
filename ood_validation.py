@@ -157,13 +157,14 @@ def get_validation_metrics(
     epsilon=0,
     batch_size=25,
     num_epoch=25,
+        num_classes=8
 ):
     if net_architecture == "DenseNet":
-        net = DenseNet(num_classes=8, depth=50).to(device)
+        net = DenseNet(num_classes=num_classes, depth=50).to(device)
     elif net_architecture == "WideResNet":
-        net = WideResNet(8, dropout=0).to(device)
+        net = WideResNet(num_classes, dropout=0).to(device)
     else:
-        net = ToyNet(class_nb=8).to(device)
+        net = ToyNet(class_nb=num_classes).to(device)
 
     print(ood_dataset.name)
 
