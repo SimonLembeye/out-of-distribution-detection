@@ -42,8 +42,8 @@ The project is structured as following:
 
 ## Launching
 
-Train: execute ```train.py```, parameters have to be chosen into the file 
+Train: execute ```train.py```, parameters have to be chosen into the file.  
 Validation is executed on iSUN with T=100, epsilon=0.002.
 
-Test: execute ```test.py```, net_architecture and training_name have to be consistent
+Test: execute ```test.py```, net_architecture and training_name have to be consistent.  
 The results have been obtained by executing this file as is.
