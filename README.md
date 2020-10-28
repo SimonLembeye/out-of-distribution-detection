@@ -19,7 +19,6 @@ Uniform Noise (UNFM) and Gaussian Noise (GSSN) can be generated thanks to the sc
 The project is structured as following:
 
 ```code
-.
 ├── data # data should be upload here
 ├── datasets
 |   └──  cifar10.py # a custom dataset design to handle margin_loss with cifar10
