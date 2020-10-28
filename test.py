@@ -89,7 +89,7 @@ if __name__ == "__main__":
         )
 
     print()
-    print("## Params valdation ...")
+    print("## Params validation ...")
     print()
 
     ood_dataset = OodDataset(
